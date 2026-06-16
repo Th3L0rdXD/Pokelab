@@ -1,14 +1,18 @@
 const BASE_URL = 'https://pokeapi.co/api/v2';
 
 export const fetchAllPokemonNames = async () => {
-    // Fetching first 1025 pokemon (Gen 1-9)
-    const response = await fetch(`${BASE_URL}/pokemon?limit=1025`);
+    // Fetching up to 1500 to cover all species and alternative varieties/forms
+    const response = await fetch(`${BASE_URL}/pokemon?limit=1500`);
     const data = await response.json();
-    return data.results.map((p, index) => ({
-        name: p.name,
-        id: index + 1,
-        url: p.url
-    }));
+    return data.results.map((p) => {
+        const parts = p.url.split('/');
+        const id = parseInt(parts[parts.length - 2]);
+        return {
+            name: p.name,
+            id: id,
+            url: p.url
+        };
+    });
 };
 
 export const fetchPokemonDetails = async (idOrName) => {

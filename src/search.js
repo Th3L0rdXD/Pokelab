@@ -9,10 +9,11 @@ export const initSearch = async (onSelect) => {
 
     const filterPokemon = (query) => {
         if (!query) return [];
-        return allPokemon.filter(p =>
-            p.name.includes(query.toLowerCase()) ||
-            p.id.toString() === query
-        ).slice(0, 10);
+        const normalizedQuery = query.toLowerCase().replace(/[-\s]+/g, ' ');
+        return allPokemon.filter(p => {
+            const normalizedName = p.name.toLowerCase().replace(/[-\s]+/g, ' ');
+            return normalizedName.includes(normalizedQuery) || p.id.toString() === query;
+        }).slice(0, 10);
     };
 
     const renderResults = (results) => {

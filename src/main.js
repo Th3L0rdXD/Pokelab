@@ -67,6 +67,7 @@ const translations = {
     load: "Carregar",
     delete: "Apagar",
     tradeWith: "Troca c/",
+    holding: "Segurando",
     trade: "Troca",
     friendship: "Amizade",
     dayFriendship: "Dia + Amizade",
@@ -178,6 +179,7 @@ const translations = {
     load: "Load",
     delete: "Delete",
     tradeWith: "Trade w/",
+    holding: "Holding",
     trade: "Trade",
     friendship: "Friendship",
     dayFriendship: "Day + Friendship",
@@ -289,6 +291,7 @@ const translations = {
     load: "Cargar",
     delete: "Eliminar",
     tradeWith: "Interc. c/",
+    holding: "Sosteniendo",
     trade: "Intercambio",
     friendship: "Amistad",
     dayFriendship: "Día + Amistad",
@@ -1408,7 +1411,7 @@ const renderHistory = () => {
     return `
       <div class="history-card">
         <div class="history-card-header">
-          <img src="${record.sprite}" alt="${record.name}">
+          <img src="${record.sprite}" alt="${record.name}" onerror="this.onerror=null; this.src='https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png';">
           <div class="history-card-title">
             <strong>${record.name.toUpperCase()}</strong>
             <span>${lvlLabel} ${record.level} • ${natureLabel}</span>
@@ -1878,7 +1881,7 @@ const renderEffectiveness = async () => {
 };
 
 const getRegionalSuffix = (name) => {
-  const suffixes = ['-galar', '-alola', '-paldea', '-hisui', '-gmax', '-mega', '-origin', '-therian', '-crown', '-hero'];
+  const suffixes = ['-galar', '-alola', '-paldea', '-hisui', '-gmax', '-mega', '-origin', '-therian', '-crown', '-hero', '-mothim'];
   for (const s of suffixes) {
     if (name.endsWith(s)) return s;
   }
@@ -1886,6 +1889,7 @@ const getRegionalSuffix = (name) => {
 };
 
 const getSpeciesNameFromForm = (formName) => {
+  if (formName === 'burmy-mothim') return 'burmy';
   const suffix = getRegionalSuffix(formName);
   if (suffix) {
     return formName.replace(suffix, '');
@@ -1893,33 +1897,47 @@ const getSpeciesNameFromForm = (formName) => {
   return formName;
 };
 
-const resolveEvolutionNodeNameBeforeCache = (speciesName, parentName = '') => {
-  if (!currentPokemon) return speciesName;
-  if (speciesName === currentPokemon.species.name) {
-    return currentPokemon.name;
-  }
-  const suffix = getRegionalSuffix(parentName || currentPokemon.name);
-  if (suffix) {
-    return `${speciesName}${suffix}`;
-  }
-  return speciesName;
-};
-
-const isEvolutionBranchValid = (child, parentName) => {
-  if (!child.evolution_details || child.evolution_details.length === 0) {
+const isEvolutionBranchValidForForm = (childNode, parentFormName) => {
+  if (!childNode.evolution_details || childNode.evolution_details.length === 0) {
     return true;
   }
-  const parentSuffix = getRegionalSuffix(parentName);
-  return child.evolution_details.some(d => {
+  const childSpeciesName = childNode.species.name;
+  
+  // Custom Burmy/Wormadam/Mothim routing rules
+  if (parentFormName === 'burmy-mothim') {
+    return childSpeciesName === 'mothim';
+  }
+  if (parentFormName === 'burmy') {
+    return childSpeciesName === 'wormadam';
+  }
+  if (parentFormName === 'burmy-sandy') {
+    return childSpeciesName === 'wormadam';
+  }
+  if (parentFormName === 'burmy-trash') {
+    return childSpeciesName === 'wormadam';
+  }
+
+  if (childSpeciesName === 'mothim') {
+    return true;
+  }
+  
+  const parentSuffix = getRegionalSuffix(parentFormName);
+  
+  const hasMatch = childNode.evolution_details.some(d => {
     if (d.base_form) {
-      return d.base_form.name === parentName;
+      return d.base_form.name === parentFormName;
     }
     return !parentSuffix;
   });
+  
+  return hasMatch;
 };
 
 const getStartingFormsForChain = (chainData) => {
   const rootSpeciesName = chainData.chain.species.name;
+  if (rootSpeciesName === 'burmy') {
+    return ['burmy-mothim', 'burmy', 'burmy-sandy', 'burmy-trash'];
+  }
   const formsSet = new Set([rootSpeciesName]);
 
   const collectBaseForms = (node) => {
@@ -1938,45 +1956,17 @@ const getStartingFormsForChain = (chainData) => {
   };
   collectBaseForms(chainData.chain);
 
-  return Array.from(formsSet);
+  return Array.from(formsSet).filter(form => getSpeciesNameFromForm(form) === rootSpeciesName);
 };
 
-const getPathsFromForm = (speciesNode, currentFormName) => {
-  const suffix = getRegionalSuffix(currentFormName);
-  const paths = [];
-
-  const validChildren = (speciesNode.evolves_to || []).filter(child => {
-    return isEvolutionBranchValid(child, currentFormName);
-  });
-
-  if (validChildren.length === 0) {
-    return [[currentFormName]];
+const getResolvedBranchesForChild = (childNode, parentFormName) => {
+  if (!isEvolutionBranchValidForForm(childNode, parentFormName)) {
+    return [];
   }
-
-  validChildren.forEach(child => {
-    let childFormName = child.species.name;
-    if (suffix) {
-      childFormName = `${child.species.name}${suffix}`;
-    }
-
-    const childPaths = getPathsFromForm(child, childFormName);
-    childPaths.forEach(path => {
-      paths.push([currentFormName, ...path]);
-    });
-  });
-
-  return paths;
-};
-
-const getEvolutionPaths = (chainData) => {
-  const startingForms = getStartingFormsForChain(chainData);
-  let allPaths = [];
   
-  startingForms.forEach(form => {
-    const paths = getPathsFromForm(chainData.chain, form);
-    allPaths.push(...paths);
-  });
-
+  const parentSuffix = getRegionalSuffix(parentFormName);
+  const childSpeciesName = childNode.species.name;
+  
   const regionalVariantsMap = {
     'raichu': ['raichu-alola'],
     'exeggutor': ['exeggutor-alola'],
@@ -1992,42 +1982,71 @@ const getEvolutionPaths = (chainData) => {
     'goodra': ['goodra-hisui'],
     'avalugg': ['avalugg-hisui'],
     'braviary': ['braviary-hisui'],
-    'zoroark': ['zoroark-hisui']
-  };
-
-  let expandedPaths = [];
-  allPaths.forEach(path => {
-    expandedPaths.push(path);
+    'zoroark': ['zoroark-hisui'],
+    'mr-mime': ['mr-mime-galar'],
+    'growlithe': ['growlithe-hisui'],
+    'arcanine': ['arcanine-hisui'],
+    'voltorb': ['voltorb-hisui'],
+    'electrode': ['electrode-hisui'],
+    'sneasel': ['sneasel-hisui'],
+    'qwilfish': ['qwilfish-hisui'],
+    'wooper': ['wooper-paldea'],
+    'tauros': ['tauros-paldea-combat', 'tauros-paldea-blaze', 'tauros-paldea-aqua'],
     
-    path.forEach((formName, idx) => {
-      const baseSpecies = getSpeciesNameFromForm(formName);
-      const variants = regionalVariantsMap[baseSpecies];
-      if (variants) {
-        variants.forEach(variantName => {
-          const newPath = [...path];
-          newPath[idx] = variantName;
-          
-          const variantSuffix = getRegionalSuffix(variantName);
-          for (let j = idx + 1; j < newPath.length; j++) {
-            newPath[j] = `${getSpeciesNameFromForm(newPath[j])}${variantSuffix}`;
-          }
-          expandedPaths.push(newPath);
-        });
-      }
-    });
-  });
-
-  const seen = new Set();
-  const finalPaths = [];
-  expandedPaths.forEach(p => {
-    const key = p.join(',');
-    if (!seen.has(key)) {
-      seen.add(key);
-      finalPaths.push(p);
+    'raticate': ['raticate-alola'],
+    'sandslash': ['sandslash-alola'],
+    'ninetales': ['ninetales-alola'],
+    'dugtrio': ['dugtrio-alola'],
+    'persian': ['persian-alola'],
+    'graveler': ['graveler-alola'],
+    'golem': ['golem-alola'],
+    'muk': ['muk-alola'],
+    'rapidash': ['rapidash-galar'],
+    'obstagoon': ['obstagoon'],
+    'cursola': ['cursola'],
+    'sirfetchd': ['sirfetchd'],
+    'perrserker': ['perrserker'],
+    'clodsire': ['clodsire'],
+    'mr-rime': ['mr-rime'],
+    
+    'linoone': ['linoone-galar'],
+    'darmanitan': ['darmanitan-galar'],
+    'runerigus': ['runerigus'],
+    'overqwil': ['overqwil'],
+    'sneasler': ['sneasler'],
+    'wormadam': ['wormadam-sandy', 'wormadam-trash'],
+    'burmy': ['burmy-sandy', 'burmy-trash']
+  };
+  
+  if (parentSuffix) {
+    const candidateName = `${childSpeciesName}${parentSuffix}`;
+    const variants = regionalVariantsMap[childSpeciesName];
+    if (variants && variants.includes(candidateName)) {
+      return [candidateName];
     }
-  });
-
-  return finalPaths;
+    return [childSpeciesName];
+  }
+  
+  const standardToRegionalEvolutions = {
+    'raichu': 'raichu-alola',
+    'exeggutor': 'exeggutor-alola',
+    'marowak': 'marowak-alola',
+    'weezing': 'weezing-galar',
+    'mr-mime': 'mr-mime-galar',
+    'sliggoo': 'sliggoo-hisui',
+    'braviary': 'braviary-hisui',
+    'avalugg': 'avalugg-hisui',
+    'decidueye': 'decidueye-hisui',
+    'typhlosion': 'typhlosion-hisui',
+    'samurott': 'samurott-hisui',
+    'lilligant': 'lilligant-hisui'
+  };
+  
+  const results = [childSpeciesName];
+  if (standardToRegionalEvolutions[childSpeciesName]) {
+    results.push(standardToRegionalEvolutions[childSpeciesName]);
+  }
+  return results;
 };
 
 const getSingleEvolutionMethodHtml = (details) => {
@@ -2044,7 +2063,9 @@ const getSingleEvolutionMethodHtml = (details) => {
   if (details.item) {
     const itemName = details.item.name;
     itemNameTranslated = itemName.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    
     itemImgUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${itemName}.png`;
+    
     text = itemNameTranslated;
     hasItem = true;
     if (details.time_of_day) {
@@ -2052,12 +2073,19 @@ const getSingleEvolutionMethodHtml = (details) => {
       text += ` (${todText})`;
     }
   }
-  // 2. Trade with held item
+  // 2. Trade with held item / Level up holding item
   else if (details.held_item) {
     const itemName = details.held_item.name;
     itemNameTranslated = itemName.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    
     itemImgUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${itemName}.png`;
-    text = `${t.tradeWith} ${itemNameTranslated}`;
+    
+    const isTrade = details.trigger && details.trigger.name === 'trade';
+    if (isTrade) {
+      text = `${t.tradeWith} ${itemNameTranslated}`;
+    } else {
+      text = `${t.holding} ${itemNameTranslated}`;
+    }
     hasItem = true;
     if (details.time_of_day) {
       const todText = details.time_of_day === 'day' ? (lang === 'pt' ? 'Dia' : lang === 'es' ? 'Día' : 'Day') : (lang === 'pt' ? 'Noite' : lang === 'es' ? 'Noche' : 'Night');
@@ -2096,17 +2124,40 @@ const getSingleEvolutionMethodHtml = (details) => {
     const moveName = details.known_move.name.replace('-', ' ');
     text = `Move: ${moveName.charAt(0).toUpperCase() + moveName.slice(1)}`;
   }
+  // 8.5 Min Beauty
+  else if (details.min_beauty) {
+    text = lang === 'pt' ? 'Beleza Máxima ao subir de Level' : lang === 'es' ? 'Belleza Máxima al subir de Nivel' : 'Max Beauty upon leveling up';
+  }
   // 9. Location
   else if (details.location) {
-    text = details.location.name.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    const locName = details.location.name.toLowerCase();
+    const isMagnetic = ['coronet', 'chargestone', 'route-13', 'mauville', 'blush', 'poni', 'magnetic'].some(k => locName.includes(k));
+    const isMoss = ['moss', 'petalburg', 'pinwheel', 'woods', 'forest', 'route-20'].some(k => locName.includes(k));
+    const isIce = ['ice-rock', 'lanakila', 'frost', 'twist', 'glacier'].some(k => locName.includes(k));
+    
+    if (isMagnetic) {
+      text = lang === 'pt' ? 'Campo Magnético' : lang === 'es' ? 'Campo Magnético' : 'Magnetic Field';
+    } else if (isMoss) {
+      text = lang === 'pt' ? 'Rocha Musgosa' : lang === 'es' ? 'Roca Musgo' : 'Moss Rock';
+    } else if (isIce) {
+      text = lang === 'pt' ? 'Rocha de Gelo' : lang === 'es' ? 'Roca Hielo' : 'Ice Rock';
+    } else {
+      text = details.location.name.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    }
   }
   // 10. Level-up
   else if (details.min_level) {
+    let statCondition = '';
+    if (details.relative_physical_stats !== undefined && details.relative_physical_stats !== null) {
+      const cond = details.relative_physical_stats;
+      statCondition = cond === 1 ? ' (ATK > DEF)' : cond === -1 ? ' (ATK < DEF)' : ' (ATK = DEF)';
+    }
+    
     if (details.time_of_day) {
       const todText = details.time_of_day === 'day' ? (lang === 'pt' ? 'Dia' : lang === 'es' ? 'Día' : 'Day') : (lang === 'pt' ? 'Noite' : lang === 'es' ? 'Noche' : 'Night');
-      text = `Lvl ${details.min_level} (${todText})`;
+      text = `Lvl ${details.min_level} (${todText})${statCondition}`;
     } else {
-      text = `Lvl ${details.min_level}`;
+      text = `Lvl ${details.min_level}${statCondition}`;
     }
   }
   // Fallback trigger
@@ -2116,16 +2167,30 @@ const getSingleEvolutionMethodHtml = (details) => {
     text = 'Lvl ?';
   }
 
-  // Append gender symbol
+  // 11. Party species check
+  if (details.party_species) {
+    const speciesName = details.party_species.name.replace('-', ' ');
+    const capitalizedSpecies = speciesName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    const partyText = lang === 'pt' ? `c/ ${capitalizedSpecies} no grupo` : lang === 'es' ? `c/ ${capitalizedSpecies} en equipo` : `w/ ${capitalizedSpecies} in party`;
+    if (text && text !== 'level up') {
+      text += ` (${partyText})`;
+    } else {
+      text = partyText;
+    }
+  }
+
+  // Append gender text
   if (details.gender === 1) {
-    text += ' ♀';
+    const femaleText = lang === 'pt' ? 'Fêmea' : lang === 'es' ? 'Hembra' : 'Female';
+    text += ` (${femaleText})`;
   } else if (details.gender === 2) {
-    text += ' ♂';
+    const maleText = lang === 'pt' ? 'Macho' : lang === 'es' ? 'Macho' : 'Male';
+    text += ` (${maleText})`;
   }
 
   if (hasItem) {
     return `
-      <img src="${itemImgUrl}" class="evolution-item-img" title="${itemNameTranslated}">
+      <img src="${itemImgUrl}" class="evolution-item-img" title="${itemNameTranslated}" onerror="this.onerror=null; this.src='https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png';">
       <span class="method-text">${text}</span>
     `;
   }
@@ -2135,7 +2200,9 @@ const getSingleEvolutionMethodHtml = (details) => {
 const getEvolutionMethodsCombinedHtml = (detailsArray) => {
   if (!detailsArray || detailsArray.length === 0) return '<span class="method-text">Lvl ?</span>';
   
-  const htmls = detailsArray.map(d => getSingleEvolutionMethodHtml(d));
+  const rawHtmls = detailsArray.map(d => getSingleEvolutionMethodHtml(d).trim().replace(/\s+/g, ' '));
+  const htmls = Array.from(new Set(rawHtmls));
+  
   const orText = { pt: 'ou', es: 'o', en: 'or' }[currentLang] || 'or';
   const separator = ` <span class="method-or" style="font-weight: normal; opacity: 0.6; font-size: 0.65rem;">${orText}</span> `;
   
@@ -2175,49 +2242,6 @@ const getEvolutionDetailsForStep = (chainNode, parentFormName, childFormName) =>
   return matches;
 };
 
-const renderPathRow = (path, chainData) => {
-  let html = '<div class="evolution-path-row">';
-  
-  for (let i = 0; i < path.length; i++) {
-    const formName = path[i];
-    const cache = evolutionDetailsCache[formName] || evolutionDetailsCache[getSpeciesNameFromForm(formName)];
-    const spriteUrl = cache ? cache.sprite : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${getSpeciesNameFromForm(formName)}.png`;
-    const typesHtml = cache ? cache.types.map(t => `<span class="type-pill" style="background-color: var(--type-${t})">${getTypeTranslated(t)}</span>`).join('') : '';
-    const idHtml = cache ? `<span class="evolution-id">#${cache.id.toString().padStart(3, '0')}</span>` : '';
-    const displayName = cache ? cache.name : formName;
-    const capitalizedName = displayName.replace('-', ' ').toUpperCase();
-
-    html += `
-      <div class="evolution-step" data-name="${displayName}">
-        <img src="${spriteUrl}" alt="${displayName}">
-        <div class="evolution-name-container">
-          ${idHtml}
-          <strong>${capitalizedName}</strong>
-        </div>
-        <div class="evolution-step-types">
-          ${typesHtml}
-        </div>
-      </div>
-    `;
-
-    if (i < path.length - 1) {
-      const nextFormName = path[i + 1];
-      const detailsArray = getEvolutionDetailsForStep(chainData.chain, formName, nextFormName);
-      const methodHtml = getEvolutionMethodsCombinedHtml(detailsArray);
-
-      html += `
-        <div class="evolution-arrow-container">
-          <div class="evolution-arrow">➜</div>
-          <div class="evolution-method">${methodHtml}</div>
-        </div>
-      `;
-    }
-  }
-
-  html += '</div>';
-  return html;
-};
-
 const collectSpecies = (node, arr = []) => {
   if (node) {
     arr.push(node.species.name);
@@ -2228,20 +2252,376 @@ const collectSpecies = (node, arr = []) => {
   return arr;
 };
 
+const megaEvolutionsMap = {
+  'venusaur': ['venusaur-mega'],
+  'charizard': ['charizard-mega-x', 'charizard-mega-y'],
+  'blastoise': ['blastoise-mega'],
+  'beedrill': ['beedrill-mega'],
+  'pidgeot': ['pidgeot-mega'],
+  'alakazam': ['alakazam-mega'],
+  'slowbro': ['slowbro-mega'],
+  'gengar': ['gengar-mega'],
+  'kangaskhan': ['kangaskhan-mega'],
+  'pinsir': ['pinsir-mega'],
+  'gyarados': ['gyarados-mega'],
+  'aerodactyl': ['aerodactyl-mega'],
+  'mewtwo': ['mewtwo-mega-x', 'mewtwo-mega-y'],
+  'ampharos': ['ampharos-mega'],
+  'steelix': ['steelix-mega'],
+  'scizor': ['scizor-mega'],
+  'heracross': ['heracross-mega'],
+  'houndoom': ['houndoom-mega'],
+  'tyranitar': ['tyranitar-mega'],
+  'sceptile': ['sceptile-mega'],
+  'blaziken': ['blaziken-mega'],
+  'swampert': ['swampert-mega'],
+  'gardevoir': ['gardevoir-mega'],
+  'sableye': ['sableye-mega'],
+  'mawile': ['mawile-mega'],
+  'aggron': ['aggron-mega'],
+  'medicham': ['medicham-mega'],
+  'manectric': ['manectric-mega'],
+  'sharpedo': ['sharpedo-mega'],
+  'camerupt': ['camerupt-mega'],
+  'altaria': ['altaria-mega'],
+  'banette': ['banette-mega'],
+  'absol': ['absol-mega'],
+  'glalie': ['glalie-mega'],
+  'salamence': ['salamence-mega'],
+  'metagross': ['metagross-mega'],
+  'latias': ['latias-mega'],
+  'latios': ['latios-mega'],
+  'rayquaza': ['rayquaza-mega'],
+  'garchomp': ['garchomp-mega'],
+  'lucario': ['lucario-mega'],
+  'abomasnow': ['abomasnow-mega'],
+  'gallade': ['gallade-mega'],
+  'audino': ['audino-mega'],
+  'diancie': ['diancie-mega']
+};
+
+const getFormDisplayNameAndSubtitle = (formName) => {
+  let name = formName;
+  let subtitle = '';
+
+  if (formName === 'burmy-mothim') {
+    name = 'Burmy';
+    subtitle = 'All forms';
+  } else if (formName === 'burmy') {
+    name = 'Burmy';
+    subtitle = 'Plant Cloak';
+  } else if (formName === 'burmy-sandy') {
+    name = 'Burmy';
+    subtitle = 'Sandy Cloak';
+  } else if (formName === 'burmy-trash') {
+    name = 'Burmy';
+    subtitle = 'Trash Cloak';
+  } else if (formName === 'wormadam' || formName === 'wormadam-plant') {
+    name = 'Wormadam';
+    subtitle = 'Plant Cloak';
+  } else if (formName === 'wormadam-sandy') {
+    name = 'Wormadam';
+    subtitle = 'Sandy Cloak';
+  } else if (formName === 'wormadam-trash') {
+    name = 'Wormadam';
+    subtitle = 'Trash Cloak';
+  } else if (formName.endsWith('-alola')) {
+    name = formName.replace('-alola', '');
+    subtitle = 'Alola';
+  } else if (formName.endsWith('-galar')) {
+    name = formName.replace('-galar', '');
+    subtitle = 'Galar';
+  } else if (formName.endsWith('-hisui')) {
+    name = formName.replace('-hisui', '');
+    subtitle = 'Hisui';
+  } else if (formName.endsWith('-paldea')) {
+    name = formName.replace('-paldea', '');
+    subtitle = 'Paldea';
+  } else if (formName.includes('-paldea-')) {
+    name = formName.split('-')[0];
+    const sub = formName.split('-').slice(1).join(' ');
+    subtitle = sub.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  }
+
+  // Capitalize name cleanly
+  name = name.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  return { name, subtitle };
+};
+
+const collectAllFormNames = (chainData) => {
+  const startingForms = getStartingFormsForChain(chainData);
+  const allNames = new Set();
+  
+  const traverse = (formName) => {
+    allNames.add(formName);
+    const currentSpeciesName = getSpeciesNameFromForm(formName);
+    
+    // Add mega forms if they exist for this species
+    const megaForms = megaEvolutionsMap[currentSpeciesName] || [];
+    megaForms.forEach(m => allNames.add(m));
+
+    if (currentSpeciesName === 'rotom') {
+      allNames.add('rotom-heat');
+      allNames.add('rotom-wash');
+      allNames.add('rotom-frost');
+      allNames.add('rotom-fan');
+      allNames.add('rotom-mow');
+      return;
+    }
+    
+    let speciesNodeInChain = null;
+    const findSpeciesNode = (current) => {
+      if (current.species.name === currentSpeciesName) {
+        speciesNodeInChain = current;
+        return;
+      }
+      if (current.evolves_to) {
+        for (const child of current.evolves_to) {
+          findSpeciesNode(child);
+          if (speciesNodeInChain) return;
+        }
+      }
+    };
+    findSpeciesNode(chainData.chain);
+    
+    if (speciesNodeInChain && speciesNodeInChain.evolves_to) {
+      speciesNodeInChain.evolves_to.forEach(childNode => {
+        const resolvedForms = getResolvedBranchesForChild(childNode, formName);
+        resolvedForms.forEach(childFormName => {
+          traverse(childFormName);
+        });
+      });
+    }
+  };
+  
+  startingForms.forEach(form => traverse(form));
+  return Array.from(allNames);
+};
+
+const renderFormEvolutionNode = (formName, parentFormName, chainData) => {
+  const cache = evolutionDetailsCache[formName] || evolutionDetailsCache[getSpeciesNameFromForm(formName)];
+  
+  const spriteUrl = cache ? cache.sprite : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${getSpeciesNameFromForm(formName)}.png`;
+  const typesHtml = cache ? cache.types.map(t => `<span class="type-pill" style="background-color: var(--type-${t})">${getTypeTranslated(t)}</span>`).join('') : '';
+  const idHtml = cache ? `<span class="evolution-id">#${cache.id.toString().padStart(3, '0')}</span>` : '';
+  const cleanInfo = getFormDisplayNameAndSubtitle(formName);
+  const capitalizedName = cleanInfo.name.toUpperCase();
+  const subtitleHtml = cleanInfo.subtitle ? `<span class="evolution-subtitle" style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.2rem;">${cleanInfo.subtitle}</span>` : '';
+
+  let stepHtml = '';
+  if (formName === 'shedinja') {
+    const ninjaskCache = evolutionDetailsCache['ninjask'];
+    const ninjaskSprite = ninjaskCache ? ninjaskCache.sprite : '';
+    const ninjaskTypes = ninjaskCache ? ninjaskCache.types.map(t => `<span class="type-pill" style="background-color: var(--type-${t})">${getTypeTranslated(t)}</span>`).join('') : '';
+    const ninjaskIdHtml = ninjaskCache ? `<span class="evolution-id">#${ninjaskCache.id.toString().padStart(3, '0')}</span>` : '';
+    
+    stepHtml = `
+      <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; justify-content: center;">
+        <div class="evolution-step" data-name="${formName}">
+          <img src="${spriteUrl}" alt="${cleanInfo.name}" onerror="this.onerror=null; this.src='https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png';">
+          <div class="evolution-name-container">
+            ${idHtml}
+            <strong>${capitalizedName}</strong>
+            ${subtitleHtml}
+          </div>
+          <div class="evolution-step-types">
+            ${typesHtml}
+          </div>
+        </div>
+        <div style="font-size: 1.5rem; font-weight: bold; color: var(--text-secondary); margin: 0 0.2rem;">+</div>
+        <div class="evolution-step" data-name="ninjask">
+          <img src="${ninjaskSprite}" alt="Ninjask" onerror="this.onerror=null; this.src='https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png';">
+          <div class="evolution-name-container">
+            ${ninjaskIdHtml}
+            <strong>NINJASK</strong>
+          </div>
+          <div class="evolution-step-types">
+            ${ninjaskTypes}
+          </div>
+        </div>
+      </div>
+    `;
+  } else {
+    stepHtml = `
+      <div class="evolution-step" data-name="${formName}">
+        <img src="${spriteUrl}" alt="${cleanInfo.name}" onerror="this.onerror=null; this.src='https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png';">
+        <div class="evolution-name-container">
+          ${idHtml}
+          <strong>${capitalizedName}</strong>
+          ${subtitleHtml}
+        </div>
+        <div class="evolution-step-types">
+          ${typesHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  const currentSpeciesName = getSpeciesNameFromForm(formName);
+  let speciesNodeInChain = null;
+  
+  const findSpeciesNode = (current) => {
+    if (current.species.name === currentSpeciesName) {
+      speciesNodeInChain = current;
+      return;
+    }
+    if (current.evolves_to) {
+      for (const child of current.evolves_to) {
+        findSpeciesNode(child);
+        if (speciesNodeInChain) return;
+      }
+    }
+  };
+  findSpeciesNode(chainData.chain);
+
+  let branches = [];
+  
+  if (currentSpeciesName === 'rotom') {
+    const rotomApplianceForms = [
+      { name: 'rotom-heat', method: 'Microwave' },
+      { name: 'rotom-wash', method: 'Washing Machine' },
+      { name: 'rotom-frost', method: 'Refrigerator' },
+      { name: 'rotom-fan', method: 'Electric Fan' },
+      { name: 'rotom-mow', method: 'Lawnmower' }
+    ];
+    branches = rotomApplianceForms.map(f => {
+      return {
+        childFormName: f.name,
+        methodHtml: `<span class="method-text">${f.method}</span>`,
+        childNode: null
+      };
+    });
+  } else if (speciesNodeInChain && speciesNodeInChain.evolves_to && speciesNodeInChain.evolves_to.length > 0) {
+    speciesNodeInChain.evolves_to.forEach(childNode => {
+      const resolvedForms = getResolvedBranchesForChild(childNode, formName);
+      resolvedForms.forEach(childFormName => {
+        const detailsArray = getEvolutionDetailsForStep(chainData.chain, formName, childFormName);
+        let methodHtml = getEvolutionMethodsCombinedHtml(detailsArray);
+        
+        // Add random personality note for Wurmple's evolutions
+        if (formName === 'wurmple' && (childFormName === 'silcoon' || childFormName === 'cascoon')) {
+          const randText = currentLang === 'pt' ? ' (Personalidade)' : currentLang === 'es' ? ' (Personalidad)' : ' (Personality)';
+          methodHtml = methodHtml.replace('</span>', `${randText}</span>`);
+        }
+        
+        // Add custom Nincada Shedinja extra requirements
+        if (childFormName === 'shedinja') {
+          methodHtml = currentLang === 'pt' ? '<span class="method-text">Level 20 - Espaço Livre + Poke Ball</span>' : currentLang === 'es' ? '<span class="method-text">Level 20 - Espacio Libre + Poke Ball</span>' : '<span class="method-text">Level 20 - Empty Slot + Poke Ball</span>';
+        }
+
+        // Add custom Gimmighoul 999 coins requirement
+        if (childFormName === 'gholdengo') {
+          methodHtml = currentLang === 'pt' ? '<span class="method-text">Coletar 999 Coins</span>' : currentLang === 'es' ? '<span class="method-text">Colectar 999 Monedas</span>' : '<span class="method-text">Collect 999 Coins</span>';
+        }
+
+        // Add location details for Wormadam forms
+        if (childFormName === 'wormadam-plant' || childFormName === 'wormadam') {
+          const locText = currentLang === 'pt' ? ' após batalhar ao ar livre/grama' : currentLang === 'es' ? ' tras batallar al aire libre/hierba' : ' after battling outdoors/grass';
+          methodHtml = methodHtml.replace('</span>', `${locText}</span>`);
+        } else if (childFormName === 'wormadam-sandy') {
+          const locText = currentLang === 'pt' ? ' após batalhar em cavernas/praias' : currentLang === 'es' ? ' tras batallar en cuevas/playas' : ' after battling in caves/beaches';
+          methodHtml = methodHtml.replace('</span>', `${locText}</span>`);
+        } else if (childFormName === 'wormadam-trash') {
+          const locText = currentLang === 'pt' ? ' após batalhar em prédios/cidades' : currentLang === 'es' ? ' tras batallar en edificios/ciudades' : ' after battling in buildings/cities';
+          methodHtml = methodHtml.replace('</span>', `${locText}</span>`);
+        }
+
+        // Custom Burmy/Wormadam/Mothim overrides
+        if (formName === 'burmy-mothim' && childFormName === 'mothim') {
+          methodHtml = currentLang === 'pt' ? '<span class="method-text">Level 20 - Macho</span>' : currentLang === 'es' ? '<span class="method-text">Level 20 - Macho</span>' : '<span class="method-text">Level 20 - Male</span>';
+        } else if (formName === 'burmy' && childFormName === 'wormadam') {
+          methodHtml = currentLang === 'pt' ? '<span class="method-text">Level 20 - Fêmea - Grama</span>' : currentLang === 'es' ? '<span class="method-text">Level 20 - Hembra - Hierba</span>' : '<span class="method-text">Level 20 - Female - Grass</span>';
+        } else if (formName === 'burmy-sandy' && childFormName === 'wormadam-sandy') {
+          methodHtml = currentLang === 'pt' ? '<span class="method-text">Level 20 - Fêmea - Caverna</span>' : currentLang === 'es' ? '<span class="method-text">Level 20 - Hembra - Cueva</span>' : '<span class="method-text">Level 20 - Female - Cave</span>';
+        } else if (formName === 'burmy-trash' && childFormName === 'wormadam-trash') {
+          methodHtml = currentLang === 'pt' ? '<span class="method-text">Level 20 - Fêmea - Construção</span>' : currentLang === 'es' ? '<span class="method-text">Level 20 - Hembra - Construcción</span>' : '<span class="method-text">Level 20 - Female - Building</span>';
+        }
+
+        branches.push({
+          childFormName,
+          methodHtml,
+          childNode
+        });
+      });
+    });
+  }
+
+  // Get mega evolutions
+  const megaForms = megaEvolutionsMap[currentSpeciesName] || [];
+  let megasHtml = '';
+  if (megaForms.length > 0) {
+    const megaCardsHtml = megaForms.map(megaFormName => {
+      const cache = evolutionDetailsCache[megaFormName];
+      const megaSprite = cache ? cache.sprite : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${megaFormName}.png`;
+      const megaTypes = cache ? cache.types.map(t => `<span class="type-pill" style="background-color: var(--type-${t})">${getTypeTranslated(t)}</span>`).join('') : '';
+      const megaIdHtml = cache ? `<span class="evolution-id">#${cache.id.toString().padStart(3, '0')}</span>` : '';
+      const { name: cleanName, subtitle } = getFormDisplayNameAndSubtitle(megaFormName);
+      const capitalizedName = cleanName.toUpperCase();
+      const subtitleHtml = subtitle ? `<span class="evolution-subtitle" style="font-size: 0.65rem; color: var(--text-secondary); margin-bottom: 0.1rem;">${subtitle}</span>` : '';
+      
+      return `
+        <div class="evolution-step mega-step" data-name="${megaFormName}">
+          <div class="mega-label">MEGA</div>
+          <img src="${megaSprite}" alt="${megaFormName}" onerror="this.onerror=null; this.src='https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png';">
+          <div class="evolution-name-container">
+            ${megaIdHtml}
+            <strong>${capitalizedName}</strong>
+            ${subtitleHtml}
+          </div>
+          <div class="evolution-step-types">
+            ${megaTypes}
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    megasHtml = `<div class="mega-evolutions-container" style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; margin-top: 0.5rem;">${megaCardsHtml}</div>`;
+  }
+
+  const stepWrapperHtml = `
+    <div class="evolution-step-wrapper" style="display: flex; flex-direction: column; align-items: center;">
+      ${stepHtml}
+      ${megasHtml}
+    </div>
+  `;
+
+  if (branches.length > 0) {
+    const branchesHtml = branches.map(b => {
+      return `
+        <div class="evolution-arrow-container">
+          <div class="evolution-arrow">➜</div>
+          <div class="evolution-method">${b.methodHtml}</div>
+        </div>
+        ${renderFormEvolutionNode(b.childFormName, formName, chainData)}
+      `;
+    }).join('');
+
+    const isBifurcation = branches.length > 1;
+    const bifurcationClass = isBifurcation ? 'has-bifurcation' : '';
+
+    return `
+      <div class="evolution-node">
+        ${stepWrapperHtml}
+        <div class="evolution-branches ${bifurcationClass}">
+          ${branchesHtml}
+        </div>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="evolution-node">
+      ${stepWrapperHtml}
+    </div>
+  `;
+};
+
 const renderEvolutionChain = async () => {
   try {
     const chainData = await fetchEvolutionChain(currentPokemon.id);
     elements.evolutionChain.innerHTML = '';
 
-    let allFormNames = [];
-    let paths = [];
-
-    if (chainData.chain.species.name === 'eevee') {
-      allFormNames = collectSpecies(chainData.chain);
-    } else {
-      paths = getEvolutionPaths(chainData);
-      allFormNames = Array.from(new Set(paths.flat()));
-    }
+    const allFormNames = collectAllFormNames(chainData);
     
     const pokemonDetailsList = await Promise.all(
       allFormNames.map(async (name) => {
@@ -2272,70 +2652,12 @@ const renderEvolutionChain = async () => {
       }
     });
 
-    if (chainData.chain.species.name === 'eevee') {
-      const rootName = 'eevee';
-      const rootCache = evolutionDetailsCache[rootName];
-      const rootSprite = rootCache ? rootCache.sprite : '';
-      const rootIdHtml = rootCache ? `<span class="evolution-id">#${rootCache.id.toString().padStart(3, '0')}</span>` : '';
-
-      const rootHtml = `
-        <div class="evolution-circle-center" data-name="${rootName}">
-          <img src="${rootSprite}" alt="Eevee">
-          <div class="evolution-name-container">
-            ${rootIdHtml}
-            <strong>EEVEE</strong>
-          </div>
-        </div>
-      `;
-
-      const children = chainData.chain.evolves_to;
-      const childrenHtml = children.map((child, index) => {
-        const name = child.species.name;
-        const cache = evolutionDetailsCache[name];
-        const sprite = cache ? cache.sprite : '';
-        const types = cache ? cache.types.map(t => `<span class="type-pill" style="background-color: var(--type-${t})">${getTypeTranslated(t)}</span>`).join('') : '';
-        const childIdHtml = cache ? `<span class="evolution-id">#${cache.id.toString().padStart(3, '0')}</span>` : '';
-
-        let detailsArray = child.evolution_details;
-        let methodHtml = '';
-        if (detailsArray && detailsArray.length > 0) {
-          methodHtml = `
-            <div class="evolution-method-badge text-only">
-              ${getEvolutionMethodsCombinedHtml(detailsArray)}
-            </div>
-          `;
-        }
-
-        const angle = index * (360 / children.length);
-        const style = `--angle: ${angle}deg;`;
-
-        return `
-          <div class="evolution-circle-node" style="${style}" data-name="${name}">
-            <img src="${sprite}" alt="${name}">
-            <div class="evolution-name-container">
-              ${childIdHtml}
-              <strong>${name.toUpperCase()}</strong>
-            </div>
-            ${methodHtml}
-            <div class="evolution-circle-node-types">${types}</div>
-          </div>
-        `;
-      }).join('');
-
-      elements.evolutionChain.innerHTML = `
-        <div class="evolution-circle-container">
-          ${rootHtml}
-          ${childrenHtml}
-        </div>
-      `;
-
-    } else {
-      elements.evolutionChain.innerHTML = `
-        <div class="evolution-paths-container">
-          ${paths.map(path => renderPathRow(path, chainData)).join('')}
-        </div>
-      `;
-    }
+    const startingForms = getStartingFormsForChain(chainData);
+    elements.evolutionChain.innerHTML = `
+      <div class="evolution-paths-container">
+        ${startingForms.map(form => renderFormEvolutionNode(form, null, chainData)).join('')}
+      </div>
+    `;
     
     elements.evolutionSection.style.display = 'block';
     setupEvolutionClickListeners();
@@ -2594,7 +2916,7 @@ function filterEvModalResults() {
     return `
       <div class="ev-modal-results-item" data-name="${p.name}">
         <div class="ev-modal-results-name">
-          <img src="${spriteUrl}" alt="${capitalized}" onerror="this.style.display='none'">
+          <img src="${spriteUrl}" alt="${capitalized}" onerror="this.onerror=null; this.src='https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png';">
           <span>${capitalized}</span>
         </div>
         <div class="ev-modal-results-dex">#${p.id.toString().padStart(3, '0')}</div>
@@ -2709,7 +3031,7 @@ function renderEvTrainingList() {
       <div class="target-item-row">
         <!-- Coluna 1: Ícone maior, nome -->
         <div class="target-col-info">
-          <img src="${target.sprite}" alt="${target.name}" class="target-sprite" onerror="this.style.display='none'">
+          <img src="${target.sprite}" alt="${target.name}" class="target-sprite" onerror="this.onerror=null; this.src='https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png';">
           <div class="target-item-name">${target.name.toUpperCase()}</div>
         </div>
         <!-- Coluna 2: Tipos do Pokémon -->
