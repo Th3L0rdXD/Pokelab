@@ -1,5 +1,32 @@
 import { fetchAllPokemonNames } from './api';
 
+export const formatPokemonDisplayName = (name) => {
+    if (!name) return '';
+    const nameLower = name.toLowerCase();
+    
+    if (nameLower.includes('-mega') || nameLower.includes('-gmax')) {
+        const isMega = nameLower.includes('-mega');
+        const prefix = isMega ? 'MEGA' : 'GMAX';
+        
+        const parts = nameLower.split('-');
+        const idx = parts.findIndex(p => p === 'mega' || p === 'gmax');
+        
+        const baseNameParts = parts.slice(0, idx);
+        const baseName = baseNameParts.join(' ');
+        
+        const suffixParts = parts.slice(idx + 1);
+        const suffix = suffixParts.join(' ');
+        
+        let formatted = `${prefix} ${baseName}`;
+        if (suffix) {
+            formatted += ` ${suffix}`;
+        }
+        return formatted.toUpperCase();
+    }
+    
+    return name.replace(/-/g, ' ').toUpperCase();
+};
+
 export const initSearch = async (onSelect) => {
     const searchInput = document.getElementById('pokemon-search');
     const resultsDiv = document.getElementById('search-results');
@@ -26,9 +53,9 @@ export const initSearch = async (onSelect) => {
         results.forEach(p => {
             const div = document.createElement('div');
             div.className = 'search-item';
-            div.innerHTML = `<span>#${p.id.toString().padStart(3, '0')}</span> <strong>${p.name.toUpperCase()}</strong>`;
+            div.innerHTML = `<span>#${p.id.toString().padStart(3, '0')}</span> <strong>${formatPokemonDisplayName(p.name)}</strong>`;
             div.onclick = () => {
-                searchInput.value = p.name.toUpperCase();
+                searchInput.value = formatPokemonDisplayName(p.name);
                 resultsDiv.style.display = 'none';
                 searchSection.style.display = 'none';
                 onSelect(p.id);

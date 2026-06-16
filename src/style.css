@@ -982,7 +982,6 @@ input[type="range"]::-moz-range-thumb:hover {
   background: rgba(255, 255, 255, 0.03);
   border: 1.5px dashed var(--border-color);
   position: relative;
-  margin-top: 0.4rem;
   transition: transform 0.2s, border-color 0.2s, background-color 0.2s;
 }
 
@@ -1056,7 +1055,7 @@ input[type="range"]::-moz-range-thumb:hover {
 }
 
 .evolution-method {
-  font-size: 0.65rem;
+  font-size: 0.78rem;
   color: var(--text-secondary);
   background: var(--panel-bg);
   padding: 0.15rem 0.45rem;

@@ -1,6 +1,6 @@
 import './style.css';
 import { initTheme } from './theme';
-import { initSearch } from './search';
+import { initSearch, formatPokemonDisplayName } from './search';
 import { fetchPokemonDetails, fetchTypeEffectiveness, fetchNatures, fetchEvolutionChain } from './api';
 import { calculateStat, mapStatName, reverseMapStatName } from './calculator';
 import { saveData, loadData, clearData } from './storage';
@@ -1413,7 +1413,7 @@ const renderHistory = () => {
         <div class="history-card-header">
           <img src="${record.sprite}" alt="${record.name}" onerror="this.onerror=null; this.src='https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png';">
           <div class="history-card-title">
-            <strong>${record.name.toUpperCase()}</strong>
+            <strong>${formatPokemonDisplayName(record.name)}</strong>
             <span>${lvlLabel} ${record.level} • ${natureLabel}</span>
           </div>
         </div>
@@ -1618,7 +1618,7 @@ const handlePokemonSelect = async (id, isFromHistory = false) => {
 
 const renderPokemonInfo = () => {
   elements.pokeImg.src = currentPokemon.sprites.other['official-artwork'].front_default || currentPokemon.sprites.front_default;
-  elements.pokeNameId.innerHTML = `<span class="poke-id">#${currentPokemon.id.toString().padStart(3, '0')}</span><span class="poke-name">${currentPokemon.name.toUpperCase()}</span>`;
+  elements.pokeNameId.innerHTML = `<span class="poke-id">#${currentPokemon.id.toString().padStart(3, '0')}</span><span class="poke-name">${formatPokemonDisplayName(currentPokemon.name)}</span>`;
 
   elements.pokeTypes.innerHTML = currentPokemon.types.map(t =>
     `<span class="type-pill" style="background-color: var(--type-${t.type.name})">${t.type.name}</span>`
@@ -2304,6 +2304,12 @@ const getFormDisplayNameAndSubtitle = (formName) => {
   let name = formName;
   let subtitle = '';
 
+  if (formName.includes('-mega') || formName.includes('-gmax')) {
+    name = formatPokemonDisplayName(formName);
+    subtitle = '';
+    return { name, subtitle };
+  }
+
   if (formName === 'burmy-mothim') {
     name = 'Burmy';
     subtitle = 'All forms';
@@ -2575,11 +2581,11 @@ const renderFormEvolutionNode = (formName, parentFormName, chainData) => {
       `;
     }).join('');
 
-    megasHtml = `<div class="mega-evolutions-container" style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; margin-top: 0.5rem;">${megaCardsHtml}</div>`;
+    megasHtml = `<div class="mega-evolutions-container" style="display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">${megaCardsHtml}</div>`;
   }
 
   const stepWrapperHtml = `
-    <div class="evolution-step-wrapper" style="display: flex; flex-direction: column; align-items: center;">
+    <div class="evolution-step-wrapper" style="display: flex; flex-direction: row; align-items: center; gap: 0.5rem; justify-content: center; flex-wrap: wrap;">
       ${stepHtml}
       ${megasHtml}
     </div>
@@ -2618,7 +2624,7 @@ const renderFormEvolutionNode = (formName, parentFormName, chainData) => {
 
 const renderEvolutionChain = async () => {
   try {
-    const chainData = await fetchEvolutionChain(currentPokemon.id);
+    const chainData = await fetchEvolutionChain(currentPokemon.species.name);
     elements.evolutionChain.innerHTML = '';
 
     const allFormNames = collectAllFormNames(chainData);
