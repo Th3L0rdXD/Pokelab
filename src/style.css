@@ -2450,3 +2450,134 @@ input[type="range"]::-moz-range-thumb:hover {
   left: 20px;
   margin-left: 0;
 }
+
+/* --- MOBILE RESPONSIVENESS REFACTORING (June 2026) --- */
+
+/* 1. Header & Menubar Responsiveness */
+@media (max-width: 768px) {
+  header {
+    flex-direction: column;
+    gap: 1.2rem;
+    padding: 1.2rem 1rem;
+    align-items: center;
+  }
+
+  .header-left {
+    flex-direction: column;
+    gap: 1rem;
+    align-items: center;
+    width: 100%;
+  }
+
+  .header-nav {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem;
+    width: 100%;
+  }
+
+  .nav-item {
+    font-size: 0.8rem;
+    padding: 0.5rem 0.8rem;
+  }
+
+  .header-right {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+}
+
+/* 2. Pokemon Info Badges alignment on smaller screens */
+@media (max-width: 1024px) {
+  .type-list,
+  .abilities-list {
+    justify-content: center !important;
+  }
+}
+
+/* 3. Modal adjustments and table scroll containers */
+@media (max-width: 576px) {
+  .modal-content {
+    padding: 1.25rem 1rem !important;
+    width: 95% !important;
+  }
+}
+
+#nature-matrix-view,
+#nature-list-view {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-top: 1rem;
+}
+
+.matrix-table {
+  min-width: 500px;
+  width: 100%;
+}
+
+.nature-table {
+  min-width: 400px;
+  width: 100%;
+}
+
+/* 4. EV Helper Modal Search Results responsive card layout */
+@media (max-width: 576px) {
+  .ev-modal-results-header {
+    display: none !important;
+  }
+
+  .ev-modal-results-item {
+    display: grid !important;
+    grid-template-columns: 1fr auto !important;
+    gap: 0.4rem !important;
+    padding: 0.8rem !important;
+  }
+
+  .ev-modal-results-name {
+    grid-column: 1;
+  }
+
+  .ev-modal-results-dex {
+    grid-column: 2;
+    align-self: center;
+    font-size: 0.75rem;
+  }
+
+  .ev-modal-results-types {
+    grid-column: 1;
+  }
+
+  .ev-modal-results-yield {
+    grid-column: 1 / -1;
+    border-top: 1px dashed var(--border-color);
+    padding-top: 0.5rem;
+    width: 100%;
+    margin-top: 0.2rem;
+  }
+
+  #ev-modal-stats-group,
+  #ev-modal-yields-group {
+    flex-wrap: wrap !important;
+    gap: 0.8rem !important;
+  }
+}
+
+/* 5. History Cards single column layout on narrow screens */
+@media (max-width: 480px) {
+  .history-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* 6. Momentum Scroll for all scroll containers */
+.stats-table-wrapper,
+#type-chart-table-container,
+.ev-modal-results-list,
+.type-chart-flow-list,
+.training-targets-list,
+.evolution-chain {
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
