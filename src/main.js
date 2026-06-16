@@ -1885,6 +1885,14 @@ const getRegionalSuffix = (name) => {
   return '';
 };
 
+const getSpeciesNameFromForm = (formName) => {
+  const suffix = getRegionalSuffix(formName);
+  if (suffix) {
+    return formName.replace(suffix, '');
+  }
+  return formName;
+};
+
 const resolveEvolutionNodeNameBeforeCache = (speciesName, parentName = '') => {
   if (!currentPokemon) return speciesName;
   if (speciesName === currentPokemon.species.name) {
@@ -1901,188 +1909,352 @@ const isEvolutionBranchValid = (child, parentName) => {
   if (!child.evolution_details || child.evolution_details.length === 0) {
     return true;
   }
-  const hasBaseFormRestriction = child.evolution_details.some(d => d.base_form !== null && d.base_form !== undefined);
-  if (!hasBaseFormRestriction) {
-    return true;
-  }
+  const parentSuffix = getRegionalSuffix(parentName);
   return child.evolution_details.some(d => {
     if (d.base_form) {
       return d.base_form.name === parentName;
     }
-    const parentSuffix = getRegionalSuffix(parentName);
     return !parentSuffix;
   });
 };
 
-const collectAndResolveSpecies = (node, parentName = '', arr = []) => {
-  if (node) {
-    const speciesName = node.species.name;
-    const resolvedName = resolveEvolutionNodeNameBeforeCache(speciesName, parentName);
-    arr.push({ speciesName, resolvedName });
+const getStartingFormsForChain = (chainData) => {
+  const rootSpeciesName = chainData.chain.species.name;
+  const formsSet = new Set([rootSpeciesName]);
 
+  const collectBaseForms = (node) => {
     if (node.evolves_to) {
       node.evolves_to.forEach(child => {
-        if (isEvolutionBranchValid(child, resolvedName)) {
-          collectAndResolveSpecies(child, resolvedName, arr);
+        if (child.evolution_details) {
+          child.evolution_details.forEach(d => {
+            if (d.base_form) {
+              formsSet.add(d.base_form.name);
+            }
+          });
         }
+        collectBaseForms(child);
       });
     }
-  }
-  return arr;
+  };
+  collectBaseForms(chainData.chain);
+
+  return Array.from(formsSet);
 };
 
-const getEvolutionMethodHtml = (details) => {
+const getPathsFromForm = (speciesNode, currentFormName) => {
+  const suffix = getRegionalSuffix(currentFormName);
+  const paths = [];
+
+  const validChildren = (speciesNode.evolves_to || []).filter(child => {
+    return isEvolutionBranchValid(child, currentFormName);
+  });
+
+  if (validChildren.length === 0) {
+    return [[currentFormName]];
+  }
+
+  validChildren.forEach(child => {
+    let childFormName = child.species.name;
+    if (suffix) {
+      childFormName = `${child.species.name}${suffix}`;
+    }
+
+    const childPaths = getPathsFromForm(child, childFormName);
+    childPaths.forEach(path => {
+      paths.push([currentFormName, ...path]);
+    });
+  });
+
+  return paths;
+};
+
+const getEvolutionPaths = (chainData) => {
+  const startingForms = getStartingFormsForChain(chainData);
+  let allPaths = [];
+  
+  startingForms.forEach(form => {
+    const paths = getPathsFromForm(chainData.chain, form);
+    allPaths.push(...paths);
+  });
+
+  const regionalVariantsMap = {
+    'raichu': ['raichu-alola'],
+    'exeggutor': ['exeggutor-alola'],
+    'marowak': ['marowak-alola'],
+    'weezing': ['weezing-galar'],
+    'slowbro': ['slowbro-galar'],
+    'slowking': ['slowking-galar'],
+    'decidueye': ['decidueye-hisui'],
+    'typhlosion': ['typhlosion-hisui'],
+    'samurott': ['samurott-hisui'],
+    'lilligant': ['lilligant-hisui'],
+    'sliggoo': ['sliggoo-hisui'],
+    'goodra': ['goodra-hisui'],
+    'avalugg': ['avalugg-hisui'],
+    'braviary': ['braviary-hisui'],
+    'zoroark': ['zoroark-hisui']
+  };
+
+  let expandedPaths = [];
+  allPaths.forEach(path => {
+    expandedPaths.push(path);
+    
+    path.forEach((formName, idx) => {
+      const baseSpecies = getSpeciesNameFromForm(formName);
+      const variants = regionalVariantsMap[baseSpecies];
+      if (variants) {
+        variants.forEach(variantName => {
+          const newPath = [...path];
+          newPath[idx] = variantName;
+          
+          const variantSuffix = getRegionalSuffix(variantName);
+          for (let j = idx + 1; j < newPath.length; j++) {
+            newPath[j] = `${getSpeciesNameFromForm(newPath[j])}${variantSuffix}`;
+          }
+          expandedPaths.push(newPath);
+        });
+      }
+    });
+  });
+
+  const seen = new Set();
+  const finalPaths = [];
+  expandedPaths.forEach(p => {
+    const key = p.join(',');
+    if (!seen.has(key)) {
+      seen.add(key);
+      finalPaths.push(p);
+    }
+  });
+
+  return finalPaths;
+};
+
+const getSingleEvolutionMethodHtml = (details) => {
   if (!details) return '<span class="method-text">Lvl ?</span>';
   const lang = currentLang;
   const t = translations[lang];
 
-  // 1. Item-based evolution
+  let text = '';
+  let hasItem = false;
+  let itemImgUrl = '';
+  let itemNameTranslated = '';
+
+  // 1. Item-based
   if (details.item) {
     const itemName = details.item.name;
-    const translatedName = translateItemName(itemName);
-    const itemImgUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${itemName}.png`;
-    return `
-      <img src="${itemImgUrl}" class="evolution-item-img" title="${translatedName}">
-      <span class="method-text">${translatedName}</span>
-    `;
-  }
-
-  // 2. Trade with held item
-  if (details.held_item) {
-    const itemName = details.held_item.name;
-    const translatedName = translateItemName(itemName);
-    const itemImgUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${itemName}.png`;
-    return `
-      <img src="${itemImgUrl}" class="evolution-item-img" title="${translatedName}">
-      <span class="method-text">${t.tradeWith} ${translatedName}</span>
-    `;
-  }
-
-  // 3. Trade evolution
-  if (details.trigger && details.trigger.name === 'trade') {
-    return `<span class="method-text">${t.trade}</span>`;
-  }
-
-  // 4. Friendship + Time of Day / Move Type
-  if (details.min_happiness) {
-    if (details.known_move_type) {
-      return `<span class="method-text">${t.fairyFriendship}</span>`;
-    }
+    itemNameTranslated = itemName.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    itemImgUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${itemName}.png`;
+    text = itemNameTranslated;
+    hasItem = true;
     if (details.time_of_day) {
-      return `<span class="method-text">${details.time_of_day === 'day' ? t.dayFriendship : t.nightFriendship}</span>`;
+      const todText = details.time_of_day === 'day' ? (lang === 'pt' ? 'Dia' : lang === 'es' ? 'Día' : 'Day') : (lang === 'pt' ? 'Noite' : lang === 'es' ? 'Noche' : 'Night');
+      text += ` (${todText})`;
     }
-    return `<span class="method-text">${t.friendship}</span>`;
   }
-
-  // 5. Move type
-  if (details.known_move_type) {
-    return `<span class="method-text">Move: ${details.known_move_type.name}</span>`;
+  // 2. Trade with held item
+  else if (details.held_item) {
+    const itemName = details.held_item.name;
+    itemNameTranslated = itemName.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    itemImgUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${itemName}.png`;
+    text = `${t.tradeWith} ${itemNameTranslated}`;
+    hasItem = true;
+    if (details.time_of_day) {
+      const todText = details.time_of_day === 'day' ? (lang === 'pt' ? 'Dia' : lang === 'es' ? 'Día' : 'Day') : (lang === 'pt' ? 'Noite' : lang === 'es' ? 'Noche' : 'Night');
+      text += ` (${todText})`;
+    }
   }
-
-  // 6. Known move
-  if (details.known_move) {
+  // 3. Trade
+  else if (details.trigger && details.trigger.name === 'trade') {
+    text = t.trade;
+  }
+  // 4. Inkay console rotation
+  else if (details.turn_upside_down) {
+    text = lang === 'pt' ? 'Girar Console' : lang === 'es' ? 'Girar Consola' : 'Upside Down';
+  }
+  // 5. Overworld rain
+  else if (details.needs_overworld_rain) {
+    const rainText = lang === 'pt' ? 'Chuva' : lang === 'es' ? 'Lluvia' : 'Rain';
+    text = details.min_level ? `Lvl ${details.min_level} (${rainText})` : rainText;
+  }
+  // 6. Friendship
+  else if (details.min_happiness) {
+    if (details.known_move_type) {
+      text = t.fairyFriendship;
+    } else if (details.time_of_day) {
+      text = details.time_of_day === 'day' ? t.dayFriendship : t.nightFriendship;
+    } else {
+      text = t.friendship;
+    }
+  }
+  // 7. Move type
+  else if (details.known_move_type) {
+    text = `Move Type: ${details.known_move_type.name.charAt(0).toUpperCase() + details.known_move_type.name.slice(1)}`;
+  }
+  // 8. Known move
+  else if (details.known_move) {
     const moveName = details.known_move.name.replace('-', ' ');
-    const capitalizedMove = moveName.charAt(0).toUpperCase() + moveName.slice(1);
-    return `<span class="method-text">Move: ${capitalizedMove}</span>`;
+    text = `Move: ${moveName.charAt(0).toUpperCase() + moveName.slice(1)}`;
+  }
+  // 9. Location
+  else if (details.location) {
+    text = details.location.name.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+  }
+  // 10. Level-up
+  else if (details.min_level) {
+    if (details.time_of_day) {
+      const todText = details.time_of_day === 'day' ? (lang === 'pt' ? 'Dia' : lang === 'es' ? 'Día' : 'Day') : (lang === 'pt' ? 'Noite' : lang === 'es' ? 'Noche' : 'Night');
+      text = `Lvl ${details.min_level} (${todText})`;
+    } else {
+      text = `Lvl ${details.min_level}`;
+    }
+  }
+  // Fallback trigger
+  else if (details.trigger) {
+    text = details.trigger.name.replace('-', ' ');
+  } else {
+    text = 'Lvl ?';
   }
 
-  // 7. Location
-  if (details.location) {
-    const locName = details.location.name.replace('-', ' ');
-    const capitalizedLoc = locName.charAt(0).toUpperCase() + locName.slice(1);
-    return `<span class="method-text">${capitalizedLoc}</span>`;
+  // Append gender symbol
+  if (details.gender === 1) {
+    text += ' ♀';
+  } else if (details.gender === 2) {
+    text += ' ♂';
   }
 
-  // 8. Level-up
-  if (details.min_level) {
-    return `<span class="method-text">Lvl ${details.min_level}</span>`;
+  if (hasItem) {
+    return `
+      <img src="${itemImgUrl}" class="evolution-item-img" title="${itemNameTranslated}">
+      <span class="method-text">${text}</span>
+    `;
   }
-
-  // 9. Location or other specific trigger
-  if (details.trigger) {
-    return `<span class="method-text">${details.trigger.name.replace('-', ' ')}</span>`;
-  }
-
-  return '<span class="method-text">Lvl ?</span>';
+  return `<span class="method-text">${text}</span>`;
 };
 
-const renderEvolutionNode = (node, parentName = '') => {
-  const name = node.species.name;
-  const resolvedName = resolveEvolutionNodeNameBeforeCache(name, parentName);
-  const cache = evolutionDetailsCache[resolvedName] || evolutionDetailsCache[name];
+const getEvolutionMethodsCombinedHtml = (detailsArray) => {
+  if (!detailsArray || detailsArray.length === 0) return '<span class="method-text">Lvl ?</span>';
   
-  const spriteUrl = cache ? cache.sprite : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${name}.png`;
-  const typesHtml = cache ? cache.types.map(t => `<span class="type-pill" style="background-color: var(--type-${t})">${getTypeTranslated(t)}</span>`).join('') : '';
-  const idHtml = cache ? `<span class="evolution-id">#${cache.id.toString().padStart(3, '0')}</span>` : '';
+  const htmls = detailsArray.map(d => getSingleEvolutionMethodHtml(d));
+  const orText = { pt: 'ou', es: 'o', en: 'or' }[currentLang] || 'or';
+  const separator = ` <span class="method-or" style="font-weight: normal; opacity: 0.6; font-size: 0.65rem;">${orText}</span> `;
+  
+  return htmls.join(separator);
+};
 
-  const stepHtml = `
-    <div class="evolution-step" data-name="${resolvedName}">
-      <img src="${spriteUrl}" alt="${resolvedName}">
-      <div class="evolution-name-container">
-        ${idHtml}
-        <strong>${resolvedName.toUpperCase()}</strong>
+const getEvolutionDetailsForStep = (chainNode, parentFormName, childFormName) => {
+  const childSpeciesName = getSpeciesNameFromForm(childFormName);
+  
+  let foundNode = null;
+  const findNode = (current) => {
+    if (current.species.name === childSpeciesName) {
+      foundNode = current;
+      return;
+    }
+    if (current.evolves_to) {
+      current.evolves_to.forEach(child => findNode(child));
+    }
+  };
+  findNode(chainNode);
+
+  if (!foundNode) return [];
+
+  const parentSuffix = getRegionalSuffix(parentFormName);
+  
+  let matches = foundNode.evolution_details.filter(d => {
+    if (d.base_form) {
+      return d.base_form.name === parentFormName;
+    }
+    return !parentSuffix;
+  });
+
+  if (matches.length === 0) {
+    matches = foundNode.evolution_details;
+  }
+  
+  return matches;
+};
+
+const renderPathRow = (path, chainData) => {
+  let html = '<div class="evolution-path-row">';
+  
+  for (let i = 0; i < path.length; i++) {
+    const formName = path[i];
+    const cache = evolutionDetailsCache[formName] || evolutionDetailsCache[getSpeciesNameFromForm(formName)];
+    const spriteUrl = cache ? cache.sprite : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${getSpeciesNameFromForm(formName)}.png`;
+    const typesHtml = cache ? cache.types.map(t => `<span class="type-pill" style="background-color: var(--type-${t})">${getTypeTranslated(t)}</span>`).join('') : '';
+    const idHtml = cache ? `<span class="evolution-id">#${cache.id.toString().padStart(3, '0')}</span>` : '';
+    const displayName = cache ? cache.name : formName;
+    const capitalizedName = displayName.replace('-', ' ').toUpperCase();
+
+    html += `
+      <div class="evolution-step" data-name="${displayName}">
+        <img src="${spriteUrl}" alt="${displayName}">
+        <div class="evolution-name-container">
+          ${idHtml}
+          <strong>${capitalizedName}</strong>
+        </div>
+        <div class="evolution-step-types">
+          ${typesHtml}
+        </div>
       </div>
-      <div class="evolution-step-types">
-        ${typesHtml}
-      </div>
-    </div>
-  `;
+    `;
 
-  const validChildren = (node.evolves_to || []).filter(child => isEvolutionBranchValid(child, resolvedName));
+    if (i < path.length - 1) {
+      const nextFormName = path[i + 1];
+      const detailsArray = getEvolutionDetailsForStep(chainData.chain, formName, nextFormName);
+      const methodHtml = getEvolutionMethodsCombinedHtml(detailsArray);
 
-  if (validChildren.length > 0) {
-    const branchesHtml = validChildren.map(child => {
-      const details = child.evolution_details[0];
-      const methodHtml = getEvolutionMethodHtml(details);
-
-      return `
+      html += `
         <div class="evolution-arrow-container">
           <div class="evolution-arrow">➜</div>
           <div class="evolution-method">${methodHtml}</div>
         </div>
-        ${renderEvolutionNode(child, resolvedName)}
       `;
-    }).join('');
-
-    const isBifurcation = validChildren.length > 1;
-    const bifurcationClass = isBifurcation ? 'has-bifurcation' : '';
-
-    return `
-      <div class="evolution-node">
-        ${stepHtml}
-        <div class="evolution-branches ${bifurcationClass}">
-          ${branchesHtml}
-        </div>
-      </div>
-    `;
+    }
   }
 
-  return `
-    <div class="evolution-node">
-      ${stepHtml}
-    </div>
-  `;
+  html += '</div>';
+  return html;
 };
 
+const collectSpecies = (node, arr = []) => {
+  if (node) {
+    arr.push(node.species.name);
+    if (node.evolves_to) {
+      node.evolves_to.forEach(child => collectSpecies(child, arr));
+    }
+  }
+  return arr;
+};
 
 const renderEvolutionChain = async () => {
   try {
     const chainData = await fetchEvolutionChain(currentPokemon.id);
     elements.evolutionChain.innerHTML = '';
 
-    const resolvedItems = collectAndResolveSpecies(chainData.chain);
+    let allFormNames = [];
+    let paths = [];
+
+    if (chainData.chain.species.name === 'eevee') {
+      allFormNames = collectSpecies(chainData.chain);
+    } else {
+      paths = getEvolutionPaths(chainData);
+      allFormNames = Array.from(new Set(paths.flat()));
+    }
     
     const pokemonDetailsList = await Promise.all(
-      resolvedItems.map(async (item) => {
+      allFormNames.map(async (name) => {
         try {
-          const details = await fetchPokemonDetails(item.resolvedName);
-          return { name: item.speciesName, resolvedName: item.resolvedName, details };
+          const details = await fetchPokemonDetails(name);
+          return { name, details };
         } catch (e) {
           try {
-            const details = await fetchPokemonDetails(item.speciesName);
-            return { name: item.speciesName, resolvedName: item.speciesName, details };
+            const baseName = getSpeciesNameFromForm(name);
+            const details = await fetchPokemonDetails(baseName);
+            return { name, details };
           } catch (err) {
-            return { name: item.speciesName, resolvedName: item.speciesName, details: null };
+            return { name, details: null };
           }
         }
       })
@@ -2091,13 +2263,12 @@ const renderEvolutionChain = async () => {
     evolutionDetailsCache = {};
     pokemonDetailsList.forEach(item => {
       if (item.details) {
-        const cachedObj = {
+        evolutionDetailsCache[item.name] = {
           id: item.details.id,
+          name: item.details.name,
           types: item.details.types.map(t => t.type.name),
           sprite: item.details.sprites.other['official-artwork'].front_default || item.details.sprites.front_default
         };
-        evolutionDetailsCache[item.name] = cachedObj;
-        evolutionDetailsCache[item.resolvedName] = cachedObj;
       }
     });
 
@@ -2125,20 +2296,12 @@ const renderEvolutionChain = async () => {
         const types = cache ? cache.types.map(t => `<span class="type-pill" style="background-color: var(--type-${t})">${getTypeTranslated(t)}</span>`).join('') : '';
         const childIdHtml = cache ? `<span class="evolution-id">#${cache.id.toString().padStart(3, '0')}</span>` : '';
 
-        let details = child.evolution_details[0];
-        if (child.evolution_details.length > 1) {
-          const itemDetail = child.evolution_details.find(d => d.item !== null);
-          if (itemDetail) {
-            details = itemDetail;
-          }
-        }
-
+        let detailsArray = child.evolution_details;
         let methodHtml = '';
-        if (details) {
-          const isItem = !!details.item;
+        if (detailsArray && detailsArray.length > 0) {
           methodHtml = `
-            <div class="evolution-method-badge ${isItem ? '' : 'text-only'}">
-              ${getEvolutionMethodHtml(details)}
+            <div class="evolution-method-badge text-only">
+              ${getEvolutionMethodsCombinedHtml(detailsArray)}
             </div>
           `;
         }
@@ -2167,7 +2330,11 @@ const renderEvolutionChain = async () => {
       `;
 
     } else {
-      elements.evolutionChain.innerHTML = renderEvolutionNode(chainData.chain);
+      elements.evolutionChain.innerHTML = `
+        <div class="evolution-paths-container">
+          ${paths.map(path => renderPathRow(path, chainData)).join('')}
+        </div>
+      `;
     }
     
     elements.evolutionSection.style.display = 'block';
