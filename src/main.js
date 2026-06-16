@@ -720,7 +720,12 @@ const applyLanguage = () => {
   const thIv = document.getElementById('th-iv');
   if (thIv) {
     const txt = thIv.querySelector('.th-text') || thIv;
-    txt.textContent = t.iv;
+    const parts = t.iv.split(' ');
+    if (parts.length >= 2) {
+      txt.innerHTML = `<span class="main-label">${parts[0]}</span> <span class="range-sub">${parts.slice(1).join(' ')}</span>`;
+    } else {
+      txt.textContent = t.iv;
+    }
   }
   const ivTooltip = document.getElementById('iv-tooltip-text');
   if (ivTooltip) ivTooltip.textContent = t.ivTooltip;
@@ -728,7 +733,12 @@ const applyLanguage = () => {
   const thEv = document.getElementById('th-ev');
   if (thEv) {
     const txt = thEv.querySelector('.th-text') || thEv;
-    txt.textContent = t.ev;
+    const parts = t.ev.split(' ');
+    if (parts.length >= 2) {
+      txt.innerHTML = `<span class="main-label">${parts[0]}</span> <span class="range-sub">${parts.slice(1).join(' ')}</span>`;
+    } else {
+      txt.textContent = t.ev;
+    }
   }
   const evTooltip = document.getElementById('ev-tooltip-text');
   if (evTooltip) evTooltip.textContent = t.evTooltip;
@@ -971,13 +981,22 @@ const init = async () => {
     if (!header) return;
 
     const currentScrollY = window.scrollY;
-    
-    if (currentScrollY <= 50) {
-      header.classList.remove('header-hidden');
-    } else if (currentScrollY > lastScrollY) {
-      header.classList.add('header-hidden');
+    const isMobile = window.innerWidth <= 768;
+
+    if (isMobile) {
+      if (currentScrollY <= 150) {
+        header.classList.remove('header-hidden');
+      } else {
+        header.classList.add('header-hidden');
+      }
     } else {
-      header.classList.remove('header-hidden');
+      if (currentScrollY <= 50) {
+        header.classList.remove('header-hidden');
+      } else if (currentScrollY > lastScrollY) {
+        header.classList.add('header-hidden');
+      } else {
+        header.classList.remove('header-hidden');
+      }
     }
     lastScrollY = currentScrollY;
   });
@@ -1168,7 +1187,7 @@ const savePokemonToHistory = () => {
   if (!currentPokemon) return;
 
   const level = parseInt(elements.levelInput.value) || 1;
-  const natureName = elements.natureSelect.value;
+  const natureName = getEnglishNature(elements.natureSelect.value);
 
   const ivs = {};
   const evs = {};
@@ -1194,7 +1213,7 @@ const savePokemonToHistory = () => {
     notes: notesValue,
     evTargets: JSON.parse(JSON.stringify(currentEvTargets)),
     sprite: currentPokemon.sprites.other['official-artwork'].front_default || currentPokemon.sprites.front_default,
-    types: currentPokemon.types.map(t => t.type.name)
+    types: currentPokemon.types.map(t => getEnglishType(t.type.name))
   };
 
   let history = loadData('saved_pokemon_records') || [];
@@ -1322,6 +1341,41 @@ const renderTypeChartTable = () => {
   `;
 };
 
+const getEnglishNature = (natureVal) => {
+  if (!natureVal) return 'bashful';
+  const valLower = natureVal.toLowerCase();
+  if (translations['en'][valLower]) return valLower;
+  
+  for (const lang of Object.keys(translations)) {
+    const dict = translations[lang];
+    for (const key of Object.keys(dict)) {
+      if (translations['en'][key] && typeof dict[key] === 'string' && dict[key].toLowerCase() === valLower) {
+        return key;
+      }
+    }
+  }
+  return valLower;
+};
+
+const getEnglishType = (typeVal) => {
+  if (!typeVal) return 'normal';
+  const valLower = typeVal.toLowerCase();
+  if (translations['en'][valLower]) return valLower;
+  
+  for (const lang of Object.keys(translations)) {
+    const dict = translations[lang];
+    for (const key of Object.keys(dict)) {
+      if (translations['en'][key] && typeof dict[key] === 'string' && dict[key].toLowerCase() === valLower) {
+        const validTypes = ['normal', 'fire', 'water', 'electric', 'grass', 'ice', 'fighting', 'poison', 'ground', 'flying', 'psychic', 'bug', 'rock', 'ghost', 'dragon', 'dark', 'steel', 'fairy'];
+        if (validTypes.includes(key)) {
+          return key;
+        }
+      }
+    }
+  }
+  return valLower;
+};
+
 const renderHistory = () => {
   const listEl = document.getElementById('history-list');
   if (!listEl) return;
@@ -1339,13 +1393,16 @@ const renderHistory = () => {
 
   listEl.innerHTML = history.sort((a, b) => b.timestamp - a.timestamp).map(record => {
     const formattedDate = new Date(record.timestamp).toLocaleString(currentLocale);
-    const typesHtml = record.types.map(tKey => {
-      const typeLabel = t[tKey] || tKey;
-      return `<span class="type-pill" style="background-color: var(--type-${tKey})">${typeLabel}</span>`;
+    const englishTypes = (record.types || []).map(tKey => getEnglishType(tKey));
+    const typesHtml = englishTypes.map(tKey => {
+      const typeLabel = translations['en'][tKey] || tKey;
+      const typeLabelCap = typeLabel.charAt(0).toUpperCase() + typeLabel.slice(1);
+      return `<span class="type-pill" style="background-color: var(--type-${tKey})">${typeLabelCap}</span>`;
     }).join('');
     
-    const translatedNature = t[record.nature] || record.nature;
-    const natureLabel = translatedNature.charAt(0).toUpperCase() + translatedNature.slice(1);
+    const englishNatureKey = getEnglishNature(record.nature);
+    const englishNature = translations['en'][englishNatureKey] || englishNatureKey;
+    const natureLabel = englishNature.charAt(0).toUpperCase() + englishNature.slice(1);
     const lvlLabel = t.historyLevel || "Level";
 
     return `
@@ -1403,7 +1460,7 @@ const loadRecord = async (timestamp) => {
   // Define inputs com os dados carregados
   elements.levelInput.value = record.level;
   elements.levelRange.value = record.level;
-  elements.natureSelect.value = record.nature;
+  elements.natureSelect.value = getEnglishNature(record.nature);
   updateNatureTrigger();
 
   const notesTextarea = document.getElementById('pokemon-notes');
@@ -2085,12 +2142,12 @@ const hasUnsavedChanges = () => {
   if (!currentPokemon || !loadedConfig) return false;
 
   const currentLevel = parseInt(elements.levelInput.value) || 1;
-  const currentNature = elements.natureSelect.value;
+  const currentNature = getEnglishNature(elements.natureSelect.value);
   const notesTextarea = document.getElementById('pokemon-notes');
   const currentNotes = notesTextarea ? notesTextarea.value : '';
 
   if (currentLevel !== loadedConfig.level) return true;
-  if (currentNature !== loadedConfig.nature) return true;
+  if (currentNature !== getEnglishNature(loadedConfig.nature)) return true;
   if (currentNotes !== loadedConfig.notes) return true;
 
   let ivsChanged = false;
