@@ -954,6 +954,17 @@ const init = async () => {
 
   initLangDropdown();
 
+  window.addEventListener('resize', () => {
+    const somaTotalTd = document.getElementById('td-somatotal')?.parentElement;
+    if (somaTotalTd) {
+      if (window.innerWidth <= 768) {
+        somaTotalTd.setAttribute('colspan', '2');
+      } else {
+        somaTotalTd.setAttribute('colspan', '4');
+      }
+    }
+  });
+
   await initSearch(handlePokemonSelect);
 
 
@@ -1586,6 +1597,15 @@ const renderStatsTable = () => {
 
   const bst = currentPokemon.stats.reduce((acc, s) => acc + s.base_stat, 0);
   elements.baseTotalSum.textContent = bst;
+
+  const somaTotalTd = document.getElementById('td-somatotal')?.parentElement;
+  if (somaTotalTd) {
+    if (window.innerWidth <= 768) {
+      somaTotalTd.setAttribute('colspan', '2');
+    } else {
+      somaTotalTd.setAttribute('colspan', '4');
+    }
+  }
 
   document.querySelectorAll('.iv-input, .ev-input').forEach(input => {
     input.addEventListener('input', (e) => {

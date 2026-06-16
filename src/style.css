@@ -2488,11 +2488,40 @@ input[type="range"]::-moz-range-thumb:hover {
   }
 }
 
-/* 2. Pokemon Info Badges alignment on smaller screens */
-@media (max-width: 1024px) {
+/* 2. Calculator Header left-alignment on smaller screens */
+@media (max-width: 768px) {
+  .calculator-header {
+    align-items: stretch !important;
+    text-align: left !important;
+    padding: 1.25rem 1rem !important;
+  }
+  .poke-info-left {
+    align-items: center !important;
+    text-align: center !important;
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+  .poke-info-middle {
+    align-items: flex-start !important;
+    padding: 1.25rem 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+    border-top: 2px dashed var(--border-color) !important;
+    border-bottom: 2px dashed var(--border-color) !important;
+    width: 100% !important;
+  }
+  .poke-info-middle .info-group {
+    align-items: flex-start !important;
+    text-align: left !important;
+    width: 100% !important;
+  }
   .type-list,
   .abilities-list {
-    justify-content: center !important;
+    justify-content: flex-start !important; /* Left align on mobile */
+  }
+  .poke-info-right {
+    width: 100% !important;
+    min-width: 0 !important;
   }
 }
 
@@ -2522,7 +2551,37 @@ input[type="range"]::-moz-range-thumb:hover {
   width: 100%;
 }
 
-/* 4. EV Helper Modal Search Results responsive card layout */
+/* 4. Calculator Form: Stats Table mobile layout (no horizontal scroll) */
+@media (max-width: 680px) {
+  #th-min, #th-max,
+  .stat-min, .stat-max {
+    display: none !important;
+  }
+
+  .stats-table {
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+
+  .stat-bar-container {
+    display: none !important; /* Hide progress bars on mobile to make columns narrow */
+  }
+
+  .stats-table th,
+  .stats-table td {
+    padding: 0.5rem 0.35rem !important;
+    font-size: 0.8rem !important;
+  }
+
+  .iv-input,
+  .ev-input {
+    width: 48px !important;
+    padding: 0.3rem 0.15rem !important;
+    font-size: 0.8rem !important;
+  }
+}
+
+/* 5. EV Helper Modal Search Results responsive card layout */
 @media (max-width: 576px) {
   .ev-modal-results-header {
     display: none !important;
@@ -2564,14 +2623,53 @@ input[type="range"]::-moz-range-thumb:hover {
   }
 }
 
-/* 5. History Cards single column layout on narrow screens */
+/* 6. History Cards single column layout on narrow screens */
 @media (max-width: 480px) {
   .history-grid {
     grid-template-columns: 1fr !important;
   }
 }
 
-/* 6. Momentum Scroll for all scroll containers */
+/* 7. Evolution Chain Vertical Layout on Mobile */
+@media (max-width: 768px) {
+  .evolution-chain {
+    flex-direction: column !important;
+    overflow-x: visible !important;
+    gap: 1.5rem !important;
+    align-items: center !important;
+  }
+
+  .evolution-node {
+    flex-direction: column !important;
+    width: 100% !important;
+    align-items: center !important;
+    gap: 1.5rem !important;
+  }
+
+  .evolution-branches {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+    align-items: center !important;
+    gap: 1.5rem !important;
+  }
+
+  .evolution-arrow-container {
+    flex-direction: column !important;
+    align-items: center !important;
+    gap: 0.25rem !important;
+    min-width: 0 !important;
+    width: auto !important;
+    align-self: auto !important;
+    padding: 0.5rem 0 !important;
+  }
+
+  .evolution-arrow {
+    transform: rotate(90deg) !important; /* Point arrow downwards */
+  }
+}
+
+/* 8. Momentum Scroll for all scroll containers */
 .stats-table-wrapper,
 #type-chart-table-container,
 .ev-modal-results-list,
