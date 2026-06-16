@@ -1877,30 +1877,150 @@ const renderEffectiveness = async () => {
 
 };
 
-const collectSpecies = (node, arr = []) => {
+const getRegionalSuffix = (name) => {
+  const suffixes = ['-galar', '-alola', '-paldea', '-hisui', '-gmax', '-mega', '-origin', '-therian', '-crown', '-hero'];
+  for (const s of suffixes) {
+    if (name.endsWith(s)) return s;
+  }
+  return '';
+};
+
+const resolveEvolutionNodeNameBeforeCache = (speciesName, parentName = '') => {
+  if (!currentPokemon) return speciesName;
+  if (speciesName === currentPokemon.species.name) {
+    return currentPokemon.name;
+  }
+  const suffix = getRegionalSuffix(parentName || currentPokemon.name);
+  if (suffix) {
+    return `${speciesName}${suffix}`;
+  }
+  return speciesName;
+};
+
+const isEvolutionBranchValid = (child, parentName) => {
+  if (!child.evolution_details || child.evolution_details.length === 0) {
+    return true;
+  }
+  const hasBaseFormRestriction = child.evolution_details.some(d => d.base_form !== null && d.base_form !== undefined);
+  if (!hasBaseFormRestriction) {
+    return true;
+  }
+  return child.evolution_details.some(d => {
+    if (d.base_form) {
+      return d.base_form.name === parentName;
+    }
+    const parentSuffix = getRegionalSuffix(parentName);
+    return !parentSuffix;
+  });
+};
+
+const collectAndResolveSpecies = (node, parentName = '', arr = []) => {
   if (node) {
-    arr.push(node.species.name);
+    const speciesName = node.species.name;
+    const resolvedName = resolveEvolutionNodeNameBeforeCache(speciesName, parentName);
+    arr.push({ speciesName, resolvedName });
+
     if (node.evolves_to) {
-      node.evolves_to.forEach(child => collectSpecies(child, arr));
+      node.evolves_to.forEach(child => {
+        if (isEvolutionBranchValid(child, resolvedName)) {
+          collectAndResolveSpecies(child, resolvedName, arr);
+        }
+      });
     }
   }
   return arr;
 };
 
-const renderEvolutionNode = (node) => {
+const getEvolutionMethodHtml = (details) => {
+  if (!details) return '<span class="method-text">Lvl ?</span>';
+  const lang = currentLang;
+  const t = translations[lang];
+
+  // 1. Item-based evolution
+  if (details.item) {
+    const itemName = details.item.name;
+    const translatedName = translateItemName(itemName);
+    const itemImgUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${itemName}.png`;
+    return `
+      <img src="${itemImgUrl}" class="evolution-item-img" title="${translatedName}">
+      <span class="method-text">${translatedName}</span>
+    `;
+  }
+
+  // 2. Trade with held item
+  if (details.held_item) {
+    const itemName = details.held_item.name;
+    const translatedName = translateItemName(itemName);
+    const itemImgUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${itemName}.png`;
+    return `
+      <img src="${itemImgUrl}" class="evolution-item-img" title="${translatedName}">
+      <span class="method-text">${t.tradeWith} ${translatedName}</span>
+    `;
+  }
+
+  // 3. Trade evolution
+  if (details.trigger && details.trigger.name === 'trade') {
+    return `<span class="method-text">${t.trade}</span>`;
+  }
+
+  // 4. Friendship + Time of Day / Move Type
+  if (details.min_happiness) {
+    if (details.known_move_type) {
+      return `<span class="method-text">${t.fairyFriendship}</span>`;
+    }
+    if (details.time_of_day) {
+      return `<span class="method-text">${details.time_of_day === 'day' ? t.dayFriendship : t.nightFriendship}</span>`;
+    }
+    return `<span class="method-text">${t.friendship}</span>`;
+  }
+
+  // 5. Move type
+  if (details.known_move_type) {
+    return `<span class="method-text">Move: ${details.known_move_type.name}</span>`;
+  }
+
+  // 6. Known move
+  if (details.known_move) {
+    const moveName = details.known_move.name.replace('-', ' ');
+    const capitalizedMove = moveName.charAt(0).toUpperCase() + moveName.slice(1);
+    return `<span class="method-text">Move: ${capitalizedMove}</span>`;
+  }
+
+  // 7. Location
+  if (details.location) {
+    const locName = details.location.name.replace('-', ' ');
+    const capitalizedLoc = locName.charAt(0).toUpperCase() + locName.slice(1);
+    return `<span class="method-text">${capitalizedLoc}</span>`;
+  }
+
+  // 8. Level-up
+  if (details.min_level) {
+    return `<span class="method-text">Lvl ${details.min_level}</span>`;
+  }
+
+  // 9. Location or other specific trigger
+  if (details.trigger) {
+    return `<span class="method-text">${details.trigger.name.replace('-', ' ')}</span>`;
+  }
+
+  return '<span class="method-text">Lvl ?</span>';
+};
+
+const renderEvolutionNode = (node, parentName = '') => {
   const name = node.species.name;
-  const cache = evolutionDetailsCache[name];
+  const resolvedName = resolveEvolutionNodeNameBeforeCache(name, parentName);
+  const cache = evolutionDetailsCache[resolvedName] || evolutionDetailsCache[name];
   
   const spriteUrl = cache ? cache.sprite : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${name}.png`;
   const typesHtml = cache ? cache.types.map(t => `<span class="type-pill" style="background-color: var(--type-${t})">${getTypeTranslated(t)}</span>`).join('') : '';
   const idHtml = cache ? `<span class="evolution-id">#${cache.id.toString().padStart(3, '0')}</span>` : '';
 
   const stepHtml = `
-    <div class="evolution-step" data-name="${name}">
-      <img src="${spriteUrl}" alt="${name}">
+    <div class="evolution-step" data-name="${resolvedName}">
+      <img src="${spriteUrl}" alt="${resolvedName}">
       <div class="evolution-name-container">
         ${idHtml}
-        <strong>${name.toUpperCase()}</strong>
+        <strong>${resolvedName.toUpperCase()}</strong>
       </div>
       <div class="evolution-step-types">
         ${typesHtml}
@@ -1908,47 +2028,23 @@ const renderEvolutionNode = (node) => {
     </div>
   `;
 
-  if (node.evolves_to && node.evolves_to.length > 0) {
-    const branchesHtml = node.evolves_to.map(child => {
+  const validChildren = (node.evolves_to || []).filter(child => isEvolutionBranchValid(child, resolvedName));
+
+  if (validChildren.length > 0) {
+    const branchesHtml = validChildren.map(child => {
       const details = child.evolution_details[0];
-      let methodHtml = 'Lvl ?';
-      
-      if (details) {
-        if (details.min_level) {
-          methodHtml = `Lvl ${details.min_level}`;
-        } else if (details.item) {
-          const itemName = details.item.name;
-          const translatedName = translateItemName(itemName);
-          const itemImgUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${itemName}.png`;
-          methodHtml = `
-            <img src="${itemImgUrl}" class="evolution-item-img" title="${translatedName}">
-            <span>${translatedName}</span>
-          `;
-        } else if (details.held_item) {
-          const itemName = details.held_item.name;
-          const translatedName = translateItemName(itemName);
-          const itemImgUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${itemName}.png`;
-          methodHtml = `
-            <img src="${itemImgUrl}" class="evolution-item-img" title="${translatedName}">
-            <span>${translations[currentLang].tradeWith} ${translatedName}</span>
-          `;
-        } else if (details.trigger && details.trigger.name === 'trade') {
-          methodHtml = translations[currentLang].trade;
-        } else if (details.trigger) {
-          methodHtml = details.trigger.name.replace('-', ' ');
-        }
-      }
+      const methodHtml = getEvolutionMethodHtml(details);
 
       return `
         <div class="evolution-arrow-container">
           <div class="evolution-arrow">➜</div>
           <div class="evolution-method">${methodHtml}</div>
         </div>
-        ${renderEvolutionNode(child)}
+        ${renderEvolutionNode(child, resolvedName)}
       `;
     }).join('');
 
-    const isBifurcation = node.evolves_to.length > 1;
+    const isBifurcation = validChildren.length > 1;
     const bifurcationClass = isBifurcation ? 'has-bifurcation' : '';
 
     return `
@@ -1974,34 +2070,37 @@ const renderEvolutionChain = async () => {
     const chainData = await fetchEvolutionChain(currentPokemon.id);
     elements.evolutionChain.innerHTML = '';
 
-    // Coleta todos os nomes de Pokémon na linha de evolução
-    const speciesNames = collectSpecies(chainData.chain);
+    const resolvedItems = collectAndResolveSpecies(chainData.chain);
     
-    // Carrega em paralelo os detalhes de todos os Pokémon da evolução para pegar tipos e sprites oficiais
     const pokemonDetailsList = await Promise.all(
-      speciesNames.map(async (name) => {
+      resolvedItems.map(async (item) => {
         try {
-          const details = await fetchPokemonDetails(name);
-          return { name, details };
+          const details = await fetchPokemonDetails(item.resolvedName);
+          return { name: item.speciesName, resolvedName: item.resolvedName, details };
         } catch (e) {
-          return { name, details: null };
+          try {
+            const details = await fetchPokemonDetails(item.speciesName);
+            return { name: item.speciesName, resolvedName: item.speciesName, details };
+          } catch (err) {
+            return { name: item.speciesName, resolvedName: item.speciesName, details: null };
+          }
         }
       })
     );
 
-    // Salva no cache temporário
     evolutionDetailsCache = {};
     pokemonDetailsList.forEach(item => {
       if (item.details) {
-        evolutionDetailsCache[item.name] = {
+        const cachedObj = {
           id: item.details.id,
           types: item.details.types.map(t => t.type.name),
           sprite: item.details.sprites.other['official-artwork'].front_default || item.details.sprites.front_default
         };
+        evolutionDetailsCache[item.name] = cachedObj;
+        evolutionDetailsCache[item.resolvedName] = cachedObj;
       }
     });
 
-    // Se for o Eevee, renderiza em formato de círculo
     if (chainData.chain.species.name === 'eevee') {
       const rootName = 'eevee';
       const rootCache = evolutionDetailsCache[rootName];
@@ -2026,7 +2125,6 @@ const renderEvolutionChain = async () => {
         const types = cache ? cache.types.map(t => `<span class="type-pill" style="background-color: var(--type-${t})">${getTypeTranslated(t)}</span>`).join('') : '';
         const childIdHtml = cache ? `<span class="evolution-id">#${cache.id.toString().padStart(3, '0')}</span>` : '';
 
-        // Preferir métodos de evolução com itens modernos (Leaf Stone / Ice Stone) se disponíveis
         let details = child.evolution_details[0];
         if (child.evolution_details.length > 1) {
           const itemDetail = child.evolution_details.find(d => d.item !== null);
@@ -2037,39 +2135,12 @@ const renderEvolutionChain = async () => {
 
         let methodHtml = '';
         if (details) {
-          if (details.item) {
-            const itemName = details.item.name;
-            const translatedName = translateItemName(itemName);
-            const itemImgUrl = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/${itemName}.png`;
-            methodHtml = `
-              <div class="evolution-method-badge" title="${translatedName}">
-                <img src="${itemImgUrl}" class="evolution-item-img">
-                <span class="method-text">${translatedName}</span>
-              </div>
-            `;
-          } else {
-            let text = '';
-            if (details.min_level) {
-              text = `Lvl ${details.min_level}`;
-            } else if (details.location) {
-              text = translateItemName(details.location.name);
-            } else if (details.known_move_type) {
-              text = translations[currentLang].fairyFriendship;
-            } else if (details.time_of_day) {
-              text = details.time_of_day === 'day' ? translations[currentLang].dayFriendship : translations[currentLang].nightFriendship;
-            } else if (details.min_happiness) {
-              text = translations[currentLang].friendship;
-            } else if (details.trigger) {
-              text = details.trigger.name.replace('-', ' ');
-            }
-            if (text) {
-              methodHtml = `
-                <div class="evolution-method-badge text-only">
-                  <span class="method-text">${text}</span>
-                </div>
-              `;
-            }
-          }
+          const isItem = !!details.item;
+          methodHtml = `
+            <div class="evolution-method-badge ${isItem ? '' : 'text-only'}">
+              ${getEvolutionMethodHtml(details)}
+            </div>
+          `;
         }
 
         const angle = index * (360 / children.length);
@@ -2096,7 +2167,6 @@ const renderEvolutionChain = async () => {
       `;
 
     } else {
-      // Outros pokémon: árvore horizontal normal
       elements.evolutionChain.innerHTML = renderEvolutionNode(chainData.chain);
     }
     
