@@ -122,7 +122,10 @@ const translations = {
     btnViewFlow: "Visualização por Fluxo",
     btnViewTable: "Visualização por Tabela",
     viewAsTable: "Ver como Tabela",
-    viewAsFlow: "Ver como Fluxo"
+    viewAsFlow: "Ver como Fluxo",
+    historyLevel: "Nível",
+    historyIvSum: "Soma IVs:",
+    historyEvSum: "Soma EVs:"
   },
   en: {
     title: "PokeLab",
@@ -230,7 +233,10 @@ const translations = {
     btnViewFlow: "Flow View",
     btnViewTable: "Table View",
     viewAsTable: "View as Table",
-    viewAsFlow: "View as Flow"
+    viewAsFlow: "View as Flow",
+    historyLevel: "Level",
+    historyIvSum: "IV Sum:",
+    historyEvSum: "EV Sum:"
   },
   es: {
     title: "PokeLab",
@@ -338,7 +344,10 @@ const translations = {
     btnViewFlow: "Visualización de Flujo",
     btnViewTable: "Visualización de Tabla",
     viewAsTable: "Ver como Tabla",
-    viewAsFlow: "Ver como Flujo"
+    viewAsFlow: "Ver como Flujo",
+    historyLevel: "Nivel",
+    historyIvSum: "Suma IVs:",
+    historyEvSum: "Suma EVs:"
   }
 };
 
@@ -833,6 +842,7 @@ const applyLanguage = () => {
   renderTypeChartFlow();
   renderTypeChartTable();
   updateLangDropdownUI();
+  renderHistory();
 };
 
 
@@ -1296,31 +1306,41 @@ const renderHistory = () => {
     return;
   }
 
+  const localeMap = { pt: 'pt-BR', en: 'en-US', es: 'es-ES' };
+  const currentLocale = localeMap[currentLang] || 'en-US';
+
   listEl.innerHTML = history.sort((a, b) => b.timestamp - a.timestamp).map(record => {
-    const formattedDate = new Date(record.timestamp).toLocaleString('pt-BR');
-    const typesHtml = record.types.map(t => `<span class="type-pill" style="background-color: var(--type-${t})">${t}</span>`).join('');
+    const formattedDate = new Date(record.timestamp).toLocaleString(currentLocale);
+    const typesHtml = record.types.map(tKey => {
+      const typeLabel = t[tKey] || tKey;
+      return `<span class="type-pill" style="background-color: var(--type-${tKey})">${typeLabel}</span>`;
+    }).join('');
     
+    const translatedNature = t[record.nature] || record.nature;
+    const natureLabel = translatedNature.charAt(0).toUpperCase() + translatedNature.slice(1);
+    const lvlLabel = t.historyLevel || "Level";
+
     return `
       <div class="history-card">
         <div class="history-card-header">
           <img src="${record.sprite}" alt="${record.name}">
           <div class="history-card-title">
             <strong>${record.name.toUpperCase()}</strong>
-            <span>Nível ${record.level} • ${record.nature.charAt(0).toUpperCase() + record.nature.slice(1)}</span>
+            <span>${lvlLabel} ${record.level} • ${natureLabel}</span>
           </div>
         </div>
         <div class="history-card-details">
-          <span>Tipos:</span>
+          <span>${t.typesLabel || "Types:"}</span>
           <div style="display: flex; gap: 0.2rem; justify-content: flex-end;">${typesHtml}</div>
-          <span>Soma IVs:</span>
+          <span>${t.historyIvSum || "IV Sum:"}</span>
           <div style="text-align: right;"><strong>${Object.values(record.ivs).reduce((a, b) => a + b, 0)}</strong></div>
-          <span>Soma EVs:</span>
+          <span>${t.historyEvSum || "EV Sum:"}</span>
           <div style="text-align: right;"><strong>${Object.values(record.evs).reduce((a, b) => a + b, 0)}/510</strong></div>
-          <div style="font-size: 0.65rem; color: var(--text-secondary); grid-column: 1 / -1; text-align: right; margin-top: 0.4rem;">Salvo em ${formattedDate}</div>
+          <div style="font-size: 0.65rem; color: var(--text-secondary); grid-column: 1 / -1; text-align: right; margin-top: 0.4rem;">${t.savedAt} ${formattedDate}</div>
         </div>
         <div class="history-card-actions">
-          <button class="btn-load-record" data-timestamp="${record.timestamp}">Carregar</button>
-          <button class="btn-delete-record" data-timestamp="${record.timestamp}">Apagar</button>
+          <button class="btn-load-record" data-timestamp="${record.timestamp}">${t.load}</button>
+          <button class="btn-delete-record" data-timestamp="${record.timestamp}">${t.delete}</button>
         </div>
       </div>
     `;
