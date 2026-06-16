@@ -2646,12 +2646,26 @@ input[type="range"]::-moz-range-thumb:hover {
     gap: 1.5rem !important;
   }
 
+  /* Linear branches (default) stack vertically */
   .evolution-branches {
     display: flex !important;
     flex-direction: column !important;
     width: 100% !important;
     align-items: center !important;
     gap: 1.5rem !important;
+  }
+
+  /* Bifurcated branches stay side-by-side and can scroll horizontally if needed */
+  .evolution-branches.has-bifurcation {
+    display: grid !important;
+    grid-auto-flow: column !important;
+    grid-template-rows: auto auto !important;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) !important;
+    gap: 1rem !important;
+    width: 100% !important;
+    justify-content: center !important;
+    overflow-x: auto !important;
+    padding-bottom: 0.5rem !important;
   }
 
   .evolution-arrow-container {
@@ -2664,6 +2678,7 @@ input[type="range"]::-moz-range-thumb:hover {
     padding: 0.5rem 0 !important;
   }
 
+  /* Both linear and bifurcated mobile evolution arrows point down */
   .evolution-arrow {
     transform: rotate(90deg) !important; /* Point arrow downwards */
   }
@@ -2675,7 +2690,42 @@ input[type="range"]::-moz-range-thumb:hover {
 .ev-modal-results-list,
 .type-chart-flow-list,
 .training-targets-list,
-.evolution-chain {
+.evolution-chain,
+.evolution-branches.has-bifurcation {
   -webkit-overflow-scrolling: touch;
   scroll-behavior: smooth;
+}
+
+/* 9. Header scroll behavior (scroll up to show, scroll down to hide) */
+header {
+  transition: transform 0.3s ease-in-out !important;
+}
+
+header.header-hidden {
+  transform: translateY(-100%) !important;
+}
+
+/* 10. Confirmation Modal Buttons Stack on Mobile */
+@media (max-width: 576px) {
+  #evo-confirm-modal .modal-content div[style*="display: flex"] {
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+  }
+  #btn-evo-confirm-yes,
+  #btn-evo-confirm-no,
+  #btn-evo-confirm-cancel {
+    width: 100% !important;
+    padding: 0.6rem 1rem !important;
+    font-size: 0.85rem !important;
+  }
+}
+
+/* 11. Help-btn on table headers displayed on top instead of next to the labels */
+@media (max-width: 768px) {
+  .stats-table th .tooltip-container {
+    display: flex !important;
+    flex-direction: column-reverse !important;
+    align-items: center !important;
+    gap: 0.2rem !important;
+  }
 }

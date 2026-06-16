@@ -965,6 +965,23 @@ const init = async () => {
     }
   });
 
+  let lastScrollY = window.scrollY;
+  window.addEventListener('scroll', () => {
+    const header = document.querySelector('header');
+    if (!header) return;
+
+    const currentScrollY = window.scrollY;
+    
+    if (currentScrollY <= 50) {
+      header.classList.remove('header-hidden');
+    } else if (currentScrollY > lastScrollY) {
+      header.classList.add('header-hidden');
+    } else {
+      header.classList.remove('header-hidden');
+    }
+    lastScrollY = currentScrollY;
+  });
+
   await initSearch(handlePokemonSelect);
 
 
@@ -1874,10 +1891,13 @@ const renderEvolutionNode = (node) => {
       `;
     }).join('');
 
+    const isBifurcation = node.evolves_to.length > 1;
+    const bifurcationClass = isBifurcation ? 'has-bifurcation' : '';
+
     return `
       <div class="evolution-node">
         ${stepHtml}
-        <div class="evolution-branches">
+        <div class="evolution-branches ${bifurcationClass}">
           ${branchesHtml}
         </div>
       </div>
