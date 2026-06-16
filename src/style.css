@@ -1232,6 +1232,12 @@ input[type="range"]::-moz-range-thumb:hover {
   color: #7dd3fc;
 }
 
+.quality-perfeito {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 10px rgba(217, 119, 6, 0.4);
+}
+
 .stat-min {
   color: #ef4444;
   font-size: 0.85rem;
@@ -2420,4 +2426,27 @@ input[type="range"]::-moz-range-thumb:hover {
   .type-chart-flow-legend {
     display: none;
   }
+}
+
+/* Correção de clipping dos tooltips nos cabeçalhos da tabela de status */
+.stats-table th .tooltip-text {
+  bottom: auto;
+  top: 125%;
+}
+
+.stats-table th .tooltip-text::after {
+  top: auto;
+  bottom: 100%;
+  border-color: transparent transparent var(--border-color) transparent;
+}
+
+/* Alinhamento específico para o tooltip de Stat (evitando cortar na esquerda) */
+.stats-table th#th-stat .tooltip-text {
+  left: 0;
+  transform: none;
+}
+
+.stats-table th#th-stat .tooltip-text::after {
+  left: 20px;
+  margin-left: 0;
 }

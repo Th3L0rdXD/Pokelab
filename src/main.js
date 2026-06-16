@@ -17,7 +17,7 @@ let currentTypeChartView = 'flow'; // 'flow' or 'table'
 // --- Traduções (i18n) ---
 const translations = {
   pt: {
-    title: "PokeLab - Calculadora de IV/EV",
+    title: "PokeLab",
     newSearch: "Nova Pesquisa",
     savedRecords: "Registros Salvos",
     selectPokemon: "Selecione um Pokémon",
@@ -49,6 +49,7 @@ const translations = {
     qualityBom: "Bom",
     qualityOtimo: "Ótimo",
     qualityExcelente: "Excelente",
+    qualityPerfeito: "Perfeito",
     natureTable: "Tabela de Naturezas",
     alphabetical: "Ordem Alfabética",
     statsOrder: "Ordem por Status",
@@ -61,7 +62,7 @@ const translations = {
     confirmYes: "Sim (Salvar)",
     confirmNo: "Não (Descartar)",
     cancel: "Cancelar",
-    noHistory: "Nenhum registro salvo ainda.",
+    noHistory: "Nenhum registro salvo ainda",
     savedAt: "Salvo em",
     load: "Carregar",
     delete: "Apagar",
@@ -101,8 +102,8 @@ const translations = {
     dark: "Sombrio", steel: "Aço", fairy: "Fada",
     // Stats
     hp: "HP", atk: "ATK", def: "DEF", spa: "SPA", spd: "SPD", spe: "SPE",
-    noPokemonMatching: "Nenhum Pokémon correspondente aos filtros.",
-    noActiveTargets: "Nenhum alvo ativo.",
+    noPokemonMatching: "Nenhum Pokémon correspondente aos filtros",
+    noActiveTargets: "Nenhum alvo ativo",
     statTooltip: "Os atributos do Pokémon que determinam seu desempenho em batalha: HP (Pontos de Vida), ATK (Ataque), DEF (Defesa), SPA (Ataque Especial), SPD (Defesa Especial) e SPE (Velocidade).",
     baseTooltip: "Os valores iniciais de atributos específicos de cada espécie de Pokémon. Quanto maiores os valores base, mais forte o Pokémon será nesse atributo.",
     ivTooltip: "Valores Individuais (0 a 31) gerados aleatoriamente para cada atributo de um Pokémon. Funcionam como o DNA do Pokémon, onde 31 é o valor perfeito.",
@@ -124,7 +125,7 @@ const translations = {
     viewAsFlow: "Ver como Fluxo"
   },
   en: {
-    title: "PokeLab - IV/EV Calculator",
+    title: "PokeLab",
     newSearch: "New Search",
     savedRecords: "Saved Records",
     selectPokemon: "Select a Pokémon",
@@ -156,6 +157,7 @@ const translations = {
     qualityBom: "Good",
     qualityOtimo: "Great",
     qualityExcelente: "Excellent",
+    qualityPerfeito: "Perfect",
     natureTable: "Natures Table",
     alphabetical: "Alphabetical Order",
     statsOrder: "Stats Order",
@@ -168,7 +170,7 @@ const translations = {
     confirmYes: "Yes (Save)",
     confirmNo: "No (Discard)",
     cancel: "Cancel",
-    noHistory: "No saved records yet.",
+    noHistory: "No saved records yet",
     savedAt: "Saved at",
     load: "Load",
     delete: "Delete",
@@ -208,8 +210,8 @@ const translations = {
     dark: "Dark", steel: "Steel", fairy: "Fairy",
     // Stats
     hp: "HP", atk: "ATK", def: "DEF", spa: "SPA", spd: "SPD", spe: "SPE",
-    noPokemonMatching: "No Pokémon match the selected filters.",
-    noActiveTargets: "No active targets.",
+    noPokemonMatching: "No Pokémon match the selected filters",
+    noActiveTargets: "No active targets",
     statTooltip: "The Pokémon's attributes that determine battle performance: HP (Hit Points), ATK (Attack), DEF (Defense), SPA (Special Attack), SPD (Special Defense), and SPE (Speed).",
     baseTooltip: "The starting attribute values specific to each Pokémon species. Higher base values mean a naturally stronger Pokémon in that stat.",
     ivTooltip: "Individual Values (0 to 31) randomly generated for each of a Pokémon's stats. They act like genetic potential, with 31 being perfect.",
@@ -231,7 +233,7 @@ const translations = {
     viewAsFlow: "View as Flow"
   },
   es: {
-    title: "PokeLab - Calculadora de IV/EV",
+    title: "PokeLab",
     newSearch: "Nueva Búsqueda",
     savedRecords: "Registros Guardados",
     selectPokemon: "Selecciona un Pokémon",
@@ -263,6 +265,7 @@ const translations = {
     qualityBom: "Bueno",
     qualityOtimo: "Excelente",
     qualityExcelente: "Sobresaliente",
+    qualityPerfeito: "Perfecto",
     natureTable: "Tabla de Naturalezas",
     alphabetical: "Orden Alfabético",
     statsOrder: "Orden de Estados",
@@ -275,7 +278,7 @@ const translations = {
     confirmYes: "Sí (Guardar)",
     confirmNo: "No (Descartar)",
     cancel: "Cancelar",
-    noHistory: "No hay registros guardados aún.",
+    noHistory: "No hay registros guardados aún",
     savedAt: "Guardado el",
     load: "Cargar",
     delete: "Eliminar",
@@ -315,8 +318,8 @@ const translations = {
     dark: "Siniestro", steel: "Acero", fairy: "Hada",
     // Stats
     hp: "HP", atk: "ATK", def: "DEF", spa: "SPA", spd: "SPD", spe: "SPE",
-    noPokemonMatching: "Ningún Pokémon coincide con los filtros seleccionados.",
-    noActiveTargets: "Ningún objetivo activo.",
+    noPokemonMatching: "Ningún Pokémon coincide con los filtros seleccionados",
+    noActiveTargets: "Ningún objetivo activo",
     statTooltip: "Los atributos del Pokémon que determinan su desempeño en batalla: HP (Puntos de Salud), ATK (Ataque), DEF (Defensa), SPA (Ataque Especial), SPD (Defensa Especial) y SPE (Velocidad).",
     baseTooltip: "Los valores iniciales de atributos específicos de cada especie de Pokémon. Cuanto más altos sean los valores base, más fuerte será el Pokémon en esa estadística.",
     ivTooltip: "Valores Individuales (0 a 31) generados aleatoriamente para cada estadística de un Pokémon. Actúan como el ADN del Pokémon, siendo 31 el valor perfecto.",
@@ -1090,7 +1093,7 @@ const switchTab = (tab) => {
     elements.btnNewSearch.className = 'nav-item active';
     if (elements.btnHistory) elements.btnHistory.className = 'nav-item';
     if (elements.btnTypeChart) elements.btnTypeChart.className = 'nav-item';
-    elements.btnNewSearch.style.display = 'none';
+    elements.btnNewSearch.style.display = 'inline-block';
   } else if (tab === 'history') {
     elements.calcSection.style.display = 'none';
     elements.searchSection.style.display = 'none';
@@ -1285,10 +1288,11 @@ const renderHistory = () => {
   const listEl = document.getElementById('history-list');
   if (!listEl) return;
 
+  const t = translations[currentLang];
   const history = loadData('saved_pokemon_records') || [];
 
   if (history.length === 0) {
-    listEl.innerHTML = `<p style="grid-column: 1 / -1; text-align: center; color: var(--text-secondary); font-weight: 700; margin: 2rem 0; font-size: 0.95rem;">Nenhum registro salvo ainda.</p>`;
+    listEl.innerHTML = `<p style="grid-column: 1 / -1; text-align: center; color: var(--text-secondary); font-weight: 700; margin: 2rem 0; font-size: 0.95rem;">${t.noHistory}</p>`;
     return;
   }
 
@@ -1565,13 +1569,19 @@ const renderStatsTable = () => {
 
   document.querySelectorAll('.iv-input, .ev-input').forEach(input => {
     input.addEventListener('input', (e) => {
-      let val = parseInt(e.target.value);
+      let rawVal = e.target.value;
+      if (rawVal === '') {
+        e.target.value = '0';
+        rawVal = '0';
+      }
+
+      let val = parseInt(rawVal);
       if (isNaN(val)) val = 0;
       const isIv = e.target.classList.contains('iv-input');
 
       if (isIv) {
-        if (val > 31) e.target.value = 31;
-        if (val < 0) e.target.value = 0;
+        if (val > 31) val = 31;
+        if (val < 0) val = 0;
       } else {
         const statName = e.target.id.replace('ev-', '');
         let otherEvSum = 0;
@@ -1587,12 +1597,14 @@ const renderStatsTable = () => {
 
         const maxAllowed = Math.min(252, 510 - otherEvSum);
         if (val > maxAllowed) {
-          e.target.value = maxAllowed;
+          val = maxAllowed;
         }
         if (val < 0) {
-          e.target.value = 0;
+          val = 0;
         }
       }
+
+      e.target.value = val.toString();
       updateStats();
     });
   });
@@ -1672,7 +1684,8 @@ const updateStats = () => {
   let qualityClass = 'quality-pessimo';
   let labelKey = 'qualityPessimo';
 
-  if (ivPercent >= 80) { qualityClass = 'quality-excelente'; labelKey = 'qualityExcelente'; }
+  if (ivPercent >= 100) { qualityClass = 'quality-perfeito'; labelKey = 'qualityPerfeito'; }
+  else if (ivPercent >= 80) { qualityClass = 'quality-excelente'; labelKey = 'qualityExcelente'; }
   else if (ivPercent >= 60) { qualityClass = 'quality-otimo'; labelKey = 'qualityOtimo'; }
   else if (ivPercent >= 40) { qualityClass = 'quality-bom'; labelKey = 'qualityBom'; }
   else if (ivPercent >= 20) { qualityClass = 'quality-ruim'; labelKey = 'qualityRuim'; }
@@ -2206,7 +2219,7 @@ function filterEvModalResults() {
   if (!listEl) return;
 
   if (filtered.length === 0) {
-    const emptyMsg = translations[currentLang].noPokemonMatching || "Nenhum Pokémon correspondente aos filtros.";
+    const emptyMsg = translations[currentLang].noPokemonMatching || "Nenhum Pokémon correspondente aos filtros";
     listEl.innerHTML = `<div style="text-align: center; color: var(--text-secondary); padding: 1.5rem; font-size: 0.85rem; font-style: italic; grid-column: 1 / -1;">${emptyMsg}</div>`;
     return;
   }
