@@ -1073,12 +1073,21 @@ const init = async () => {
 
   // Eventos de Abas do Cabeçalho
   elements.btnNewSearch.addEventListener('click', () => {
-    if (currentPokemon) {
-      confirmNavigation(() => {
-        switchTab('search');
-      });
+    const onHistoryOrTypeChart = (elements.btnHistory && elements.btnHistory.className.includes('active')) || 
+                                 (elements.btnTypeChart && elements.btnTypeChart.className.includes('active'));
+    
+    if (onHistoryOrTypeChart && currentPokemon) {
+      // Retorna para a calculadora ativa sem limpar ou perguntar
+      switchTab('calc');
     } else {
-      switchTab('search');
+      // Se já estiver na aba de pesquisa/calc, ou não houver pokémon carregado, inicia nova pesquisa
+      if (currentPokemon) {
+        confirmNavigation(() => {
+          switchTab('search');
+        });
+      } else {
+        switchTab('search');
+      }
     }
   });
 
@@ -1090,13 +1099,7 @@ const init = async () => {
 
   if (elements.btnTypeChart) {
     elements.btnTypeChart.addEventListener('click', () => {
-      if (currentPokemon) {
-        confirmNavigation(() => {
-          switchTab('typechart');
-        });
-      } else {
-        switchTab('typechart');
-      }
+      switchTab('typechart');
     });
   }
 
