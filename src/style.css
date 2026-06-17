@@ -2711,6 +2711,14 @@ input[type="range"]::-moz-range-thumb:hover {
     padding: 0.3rem 0.15rem !important;
     font-size: 0.8rem !important;
   }
+
+  .base-total-sum-val,
+  .stat-total-sum-val,
+  .ev-used-val,
+  .ev-remaining-val,
+  .ev-total-boundary {
+    font-size: 0.95rem !important;
+  }
 }
 
 /* 5. EV Helper Modal Search Results responsive card layout */

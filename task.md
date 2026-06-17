@@ -6,4 +6,5 @@
 - `[x]` Diminuir o tamanho e padding do badge "IVs Quality" para alinhar perfeitamente com a linha de Nível e Natureza
 - `[x]` Tornar as cores de fundo de "Ótimo" (Verde) e "Excelente" (Azul) mais vivas e vibrantes em `src/style.css`
 - `[x]` Melhorar a responsividade do badge "IVs Quality" para ocupar 100% de largura no mobile
+- `[x]` Ajustar e reduzir o tamanho das fontes dos totalizadores e contadores de EV (`0 / 510`, `Restam: 510`) de `1.2rem` para `0.95rem` no mobile
 - `[x]` Validar a compilação do projeto com `npm run build`
