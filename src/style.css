@@ -2964,3 +2964,15 @@ header.header-hidden {
   opacity: 1 !important;
   pointer-events: auto !important;
 }
+
+/* Hide active tooltips when hovering other items in the list */
+.abilities-list:hover .tooltip-text.active {
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+/* Unless we are hovering the active tooltip container itself */
+.abilities-list .tooltip-container:hover .tooltip-text.active {
+  visibility: visible !important;
+  opacity: 1 !important;
+}

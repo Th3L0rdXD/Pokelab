@@ -3292,6 +3292,23 @@ const loadAbilityTooltip = async (abilityInfo, index) => {
 
     if (finalDesc) {
       finalDesc = finalDesc.replace(/[\n\f\r]+/g, ' ');
+      
+      // Preserve "Berries" / "Berry" instead of translating to local terms like "Bagas" or "Bayas"
+      if (lang === 'pt') {
+        finalDesc = finalDesc
+          .replace(/\bbagas\b/gi, 'Berries')
+          .replace(/\bbaga\b/gi, 'Berry');
+      } else if (lang === 'es') {
+        finalDesc = finalDesc
+          .replace(/\bbayas\b/gi, 'Berries')
+          .replace(/\bbaya\b/gi, 'Berry');
+      }
+
+      // Remove trailing period if present
+      finalDesc = finalDesc.trim();
+      if (finalDesc.endsWith('.')) {
+        finalDesc = finalDesc.slice(0, -1).trim();
+      }
     }
 
     // Verify if the element is still in the document
