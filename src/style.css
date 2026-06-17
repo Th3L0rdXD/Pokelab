@@ -2786,6 +2786,11 @@ input[type="range"]::-moz-range-thumb:hover {
     gap: 1.5rem !important;
   }
 
+  .evolution-step-wrapper {
+    flex-direction: column !important;
+    gap: 0.8rem !important;
+  }
+
   /* Linear branches (default) stack vertically */
   .evolution-branches {
     display: flex !important;
