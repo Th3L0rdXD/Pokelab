@@ -2976,3 +2976,27 @@ header.header-hidden {
   visibility: visible !important;
   opacity: 1 !important;
 }
+
+/* Mobile responsive layout overrides to prevent ability tooltip clipping */
+@media (max-width: 768px) {
+  .abilities-list {
+    position: relative;
+  }
+  
+  .abilities-list .ability-pill.tooltip-container {
+    position: static;
+  }
+  
+  .abilities-list .tooltip-text {
+    width: calc(100% - 1rem) !important;
+    left: 0.5rem !important;
+    right: 0.5rem !important;
+    transform: none !important;
+    bottom: calc(100% + 8px) !important;
+    box-sizing: border-box;
+  }
+  
+  .abilities-list .tooltip-text::after {
+    display: none !important;
+  }
+}
