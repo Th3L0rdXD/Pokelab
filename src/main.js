@@ -90,6 +90,7 @@ const translations = {
     evModalStats: "Filtrar por Atributos Fornecidos",
     evModalYields: "Quantidade de EV Fornecida",
     evModalTypes: "Filtrar por Tipo",
+    neutralLabel: "Neutro",
     // Natures
     hardy: "Robusta", docility: "Dócil", docile: "Dócil", brave: "Audaz", adamant: "Firme", naughty: "Malcriada",
     bold: "Ousada", relaxed: "Relaxada", impish: "Travessa", lax: "Relaxada",
@@ -202,6 +203,7 @@ const translations = {
     evModalStats: "Filter by Provided Attributes",
     evModalYields: "EV Yield Quantity",
     evModalTypes: "Filter by Type",
+    neutralLabel: "Neutral",
     // Natures
     hardy: "Hardy", docility: "Docile", docile: "Docile", brave: "Brave", adamant: "Adamant", naughty: "Naughty",
     bold: "Bold", relaxed: "Relaxed", impish: "Impish", lax: "Lax",
@@ -314,6 +316,7 @@ const translations = {
     evModalStats: "Filtrar por Atributos Proporcionados",
     evModalYields: "Cantidad de EV Proporcionada",
     evModalTypes: "Filtrar por Tipo",
+    neutralLabel: "Neutra",
     // Natures
     hardy: "Fuerte", docility: "Dócil", docile: "Dócil", brave: "Audaz", adamant: "Firme", naughty: "Pícara",
     bold: "Osada", relaxed: "Plácida", impish: "Agitada", lax: "Floja",
@@ -1521,12 +1524,14 @@ const getStatShortName = (name) => {
 };
 
 const getNatureFormattedText = (n) => {
-  if (n.increased === n.decreased) return `${n.name.charAt(0).toUpperCase() + n.name.slice(1)} <span style="opacity: 0.6; font-size: 0.8rem;">(Neutro)</span>`;
+  const neutralText = translations[currentLang]?.neutralLabel || 'Neutro';
+  if (n.increased === n.decreased) return `${n.name.charAt(0).toUpperCase() + n.name.slice(1)} <span style="opacity: 0.6; font-size: 0.8rem;">(${neutralText})</span>`;
   return `${n.name.charAt(0).toUpperCase() + n.name.slice(1)} <span style="font-size:0.75rem; margin-left: 0.5rem; font-weight: 800;"><span class="stat-up-arrow">▲</span>${getStatShortName(n.increased)} / <span class="stat-down-arrow">▼</span>${getStatShortName(n.decreased)}</span>`;
 };
 
 const getNatureCleanText = (n) => {
-  if (n.increased === n.decreased) return `${n.name.charAt(0).toUpperCase() + n.name.slice(1)} (Neutro)`;
+  const neutralText = translations[currentLang]?.neutralLabel || 'Neutro';
+  if (n.increased === n.decreased) return `${n.name.charAt(0).toUpperCase() + n.name.slice(1)} (${neutralText})`;
   return `${n.name.charAt(0).toUpperCase() + n.name.slice(1)} (▲${getStatShortName(n.increased)} / ▼${getStatShortName(n.decreased)})`;
 };
 
@@ -1567,11 +1572,12 @@ const setupNatureClickListeners = () => {
 };
 
 const populateNatureTable = () => {
+  const neutralText = translations[currentLang]?.neutralLabel || 'Neutro';
   elements.natureTableBody.innerHTML = natures.sort((a, b) => a.name.localeCompare(b.name)).map(n => `
     <tr class="clickable-nature" data-nature="${n.name}">
       <td><strong>${n.name.charAt(0).toUpperCase() + n.name.slice(1)}</strong></td>
-      <td>${n.increased ? `<span class="stat-up-arrow">▲</span> <span class="stat-up">${getStatShortName(n.increased)}</span>` : '<span style="opacity: 0.5;">Neutro</span>'}</td>
-      <td>${n.decreased ? `<span class="stat-down-arrow">▼</span> <span class="stat-down">${getStatShortName(n.decreased)}</span>` : '<span style="opacity: 0.5;">Neutro</span>'}</td>
+      <td>${n.increased ? `<span class="stat-up-arrow">▲</span> <span class="stat-up">${getStatShortName(n.increased)}</span>` : `<span style="opacity: 0.5;">${neutralText}</span>`}</td>
+      <td>${n.decreased ? `<span class="stat-down-arrow">▼</span> <span class="stat-down">${getStatShortName(n.decreased)}</span>` : `<span style="opacity: 0.5;">${neutralText}</span>`}</td>
     </tr>
   `).join('');
 
