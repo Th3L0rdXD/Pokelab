@@ -2984,7 +2984,8 @@ header.header-hidden {
   }
   
   .abilities-list .ability-pill.tooltip-container {
-    position: static;
+    position: static !important;
+    transform: none !important;
   }
   
   .abilities-list .tooltip-text {

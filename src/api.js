@@ -4,14 +4,42 @@ export const fetchAllPokemonNames = async () => {
     // Fetching up to 1500 to cover all species and alternative varieties/forms
     const response = await fetch(`${BASE_URL}/pokemon?limit=1500`);
     const data = await response.json();
-    const excludedForms = [
-        'zygarde-10-power-construct',
-        'zygarde-50-power-construct',
-        'zygarde-mega'
-    ];
+    const shouldExclude = (name) => {
+        const n = name.toLowerCase();
+        
+        // Zygarde custom forms
+        if (n === 'zygarde-10-power-construct' || n === 'zygarde-50-power-construct' || n === 'zygarde-mega') return true;
+        
+        // Gigantamax
+        if (n.includes('-gmax')) return true;
+        
+        // Totem forms
+        if (n.includes('-totem')) return true;
+        
+        // Pikachu special forms
+        if (n.startsWith('pikachu-') && (
+            n.includes('-cap') || 
+            n.includes('cosplay') || 
+            n.includes('rock-star') || 
+            n.includes('pop-star') || 
+            n.includes('belle') || 
+            n.includes('phd') || 
+            n.includes('libre') ||
+            n.includes('starter')
+        )) return true;
+        
+        // Pichu spiky-eared
+        if (n === 'pichu-spiky-eared') return true;
+
+        // Floette eternal
+        if (n === 'floette-eternal') return true;
+
+        return false;
+    };
+
     const baseNameToId = {};
     const list = data.results
-        .filter(p => !excludedForms.includes(p.name.toLowerCase()))
+        .filter(p => !shouldExclude(p.name))
         .map((p) => {
             const parts = p.url.split('/');
             const id = parseInt(parts[parts.length - 2]);
