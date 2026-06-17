@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="/Pokelab/favicon.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PokeLab - Calculadora de IV/EV</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <script type="module" crossorigin src="/Pokelab/assets/index-C0ID1t87.js"></script>
+  <link rel="stylesheet" crossorigin href="/Pokelab/assets/index-C84dlOhH.css">
+</head>
+
+<body>
+  <div class="bg-animation"></div>
+  <header>
+    <div class="header-left">
+      <h1>PokeLab</h1>
+      <nav class="header-nav">
+        <button id="btn-new-search" class="nav-item active">Nova Pesquisa</button>
+        <button id="btn-history" class="nav-item">Registros Salvos</button>
+        <button id="btn-type-chart" class="nav-item">Tabela de Tipos</button>
+      </nav>
+    </div>
+    <div class="header-right">
+      <div class="lang-dropdown" id="lang-dropdown">
+        <button class="lang-dropdown-trigger" id="lang-dropdown-trigger" title="Select Language">
+          <img id="current-lang-flag" src="https://flagcdn.com/w40/us.png" alt="English" class="flag-img">
+          <span class="dropdown-arrow">▼</span>
+        </button>
+        <div class="lang-dropdown-options" id="lang-dropdown-options">
+          <!-- Populados dinamicamente via JS -->
+        </div>
+      </div>
+    </div>
+  </header>
+
+
+  <main>
+
+    <div id="search-section" class="search-container">
+      <h2 style="text-align: center; margin-bottom: 1rem;">Selecione um Pokémon</h2>
+      <div class="search-wrapper">
+        <input type="text" id="pokemon-search" placeholder="Nome ou Número da Pokedex..." autocomplete="off">
+        <div id="search-results" class="search-results"></div>
+      </div>
+    </div>
+
+    <div id="calculator-section" class="glass-panel">
+      <div class="calculator-header">
+        <div class="poke-info-left">
+          <img id="poke-img" class="pokemon-image" src="" alt="" onerror="this.onerror=null; this.src='https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/items/poke-ball.png';">
+          <h2 id="poke-name-id">#001 Bulbasaur</h2>
+        </div>
+        
+        <div class="poke-info-middle">
+          <div class="info-group">
+            <strong id="label-header-types">Tipos</strong>
+            <div id="poke-types" class="type-list"></div>
+          </div>
+          <div class="info-group">
+            <strong id="label-header-abilities">Habilidades</strong>
+            <div id="poke-abilities" class="abilities-list"></div>
+          </div>
+          <div class="pokemon-ev-status">
+            <div id="ev-yield" class="ev-yield-badge">---</div>
+          </div>
+        </div>
+        
+        <div class="poke-info-right">
+          <div class="notes-panel">
+            <h3 id="label-notes-title">Anotações</h3>
+            <textarea id="pokemon-notes" placeholder="Adicione anotações sobre este Pokémon..."></textarea>
+          </div>
+        </div>
+      </div>
+
+
+      <div class="calculator-form">
+        <div class="calc-grid">
+          <div class="calc-inputs-row">
+            <div class="form-group">
+              <label for="level" id="label-level">Nível (1-100)</label>
+              <div class="level-container">
+                <input type="range" id="level-range" min="1" max="100" value="50">
+                <input type="number" id="level" min="1" max="100" value="50" style="width: 80px;">
+              </div>
+            </div>
+            <div class="form-group">
+              <label id="label-nature">
+                <span id="text-nature-label">Natureza</span>
+                <span class="nature-tooltip-container">
+                  <button id="nature-help" class="help-btn" type="button">?</button>
+                  <span class="nature-tooltip" id="nature-tooltip-text"></span>
+                </span>
+              </label>
+              <div id="nature-select-trigger" class="nature-select-trigger">
+                <span id="selected-nature-name">Carregando...</span>
+                <span class="select-arrow">▼</span>
+              </div>
+              <select id="nature" style="display: none;">
+                <!-- Populado via JS -->
+              </select>
+            </div>
+          </div>
+          
+          <div style="display: flex; align-items: center; justify-content: flex-end;">
+            <div id="iv-quality" class="quality-badge">---</div>
+          </div>
+        </div>
+
+        <div class="stats-table-wrapper">
+          <table class="stats-table">
+            <thead>
+              <tr>
+                <th id="th-stat"><span class="tooltip-container"><span class="th-text">Stat</span><button class="help-btn" type="button">?</button><span class="tooltip-text" id="stat-tooltip-text"></span></span></th>
+                <th id="th-base"><span class="tooltip-container"><span class="th-text">Base</span><button class="help-btn" type="button">?</button><span class="tooltip-text" id="base-tooltip-text"></span></span></th>
+                <th id="th-iv"><span class="tooltip-container"><span class="th-text">IV (0-31)</span><button class="help-btn" type="button">?</button><span class="tooltip-text" id="iv-tooltip-text"></span></span></th>
+                <th id="th-ev"><span class="tooltip-container"><span class="th-text">EV (0-252)</span><button class="help-btn" type="button">?</button><span class="tooltip-text" id="ev-tooltip-text"></span></span></th>
+                <th id="th-min">Min</th>
+                <th id="th-max">Max</th>
+                <th id="th-total">Total</th>
+              </tr>
+            </thead>
+            <tbody id="stats-body">
+              <!-- Populado via JS -->
+            </tbody>
+            <tfoot>
+              <tr class="total-row">
+                <td><strong id="td-subtotal">SUB-TOTAL</strong></td>
+                <td id="base-total-sum" class="base-total-sum-val">0</td>
+                <td></td>
+                <td style="text-align: center; vertical-align: middle;">
+                  <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.2rem; font-size: 0.82rem; white-space: nowrap;">
+                    <div style="position: relative; display: inline-flex; align-items: center; justify-content: center;">
+                      <strong id="ev-used" class="ev-used-val" style="color: var(--secondary-color);">0</strong><span class="ev-total-boundary"> / 510</span>
+                      <span class="tooltip-container" style="position: absolute; left: 100%; margin-left: 0.25rem;">
+                        <button class="help-btn" type="button">?</button>
+                        <span class="tooltip-text" id="evs-used-tooltip-text"></span>
+                      </span>
+                    </div>
+                    <div style="font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.72rem;">
+                      <span id="label-remaining">Restam</span>: <strong id="ev-remaining" class="ev-remaining-val" style="color: #ef4444;">510</strong>
+                    </div>
+                  </div>
+                </td>
+                <td class="stat-min"></td>
+                <td class="stat-max"></td>
+                <td id="stat-total-sum" class="stat-total-sum-val">0</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+
+        <!-- Assistente de Treino de EV -->
+        <div class="ev-training-panel" style="margin-top: 2.5rem;">
+          <h3 id="label-ev-training-title" class="tooltip-container" style="display: inline-flex; align-items: center; gap: 0.25rem;">
+            <span class="title-text">Assistente de Treino de EV</span>
+            <button class="help-btn" type="button">?</button>
+            <span class="tooltip-text" id="ev-training-tooltip-text"></span>
+          </h3>
+          
+          <div class="ev-helper-controls">
+            <div class="form-group" style="width: 100%;">
+              <label id="label-search-helper">Buscar Pokémon Alvo</label>
+              <input type="text" id="ev-helper-search" placeholder="Clique para buscar e adicionar Pokémon alvo..." readonly style="cursor: pointer; width: 100%;">
+            </div>
+          </div>
+
+          <div class="ev-training-list-container">
+            <label id="label-training-targets">Alvos de Treino Ativos</label>
+            <div id="ev-training-targets-list" class="training-targets-list">
+              <!-- Populados via JS -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Efetividade de Tipos -->
+        <div class="effectiveness-section" style="margin-top: 2.5rem;">
+          <h3 id="label-effectiveness-title" class="tooltip-container" style="display: inline-flex; align-items: center; gap: 0.25rem;">
+            <span class="title-text">Efetividade de Tipos</span>
+            <button class="help-btn" type="button">?</button>
+            <span class="tooltip-text" id="effectiveness-tooltip-text"></span>
+          </h3>
+          <div class="effectiveness-container">
+            <div class="effectiveness-group">
+              <label id="label-advantages">Vantagens (Dano Reduzido)</label>
+              <div id="effectiveness-advantages" class="effectiveness-list">
+                <!-- Populado via JS -->
+              </div>
+            </div>
+            <div class="effectiveness-group">
+              <label id="label-disadvantages">Desvantagens (Dano Recebido)</label>
+              <div id="effectiveness-disadvantages" class="effectiveness-list">
+                <!-- Populado via JS -->
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="evolution-section" class="evolution-section" style="display: none;">
+          <h3 id="label-evolution-title">Linha Evolutiva</h3>
+          <div id="evolution-chain" class="evolution-chain">
+            <!-- Populado via JS -->
+          </div>
+        </div>
+
+
+      </div>
+    </div>
+
+    <!-- Seção de Histórico / Registros Salvos -->
+    <div id="history-section" class="glass-panel" style="display: none;">
+      <h2 style="margin-bottom: 1.5rem; text-transform: uppercase; letter-spacing: 0.5px;">Registros Salvos</h2>
+      <div id="history-list" class="history-grid">
+        <!-- Populado via JS -->
+      </div>
+    </div>
+
+    <!-- Seção de Tabela de Vantagens -->
+    <div id="type-chart-section" class="glass-panel" style="display: none;">
+      <div class="type-chart-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+        <h2 id="label-type-chart-title" style="text-transform: uppercase; letter-spacing: 0.5px; margin: 0;">Tabela de Tipos</h2>
+        <button id="btn-toggle-type-chart-view" class="view-btn">Ver como Tabela</button>
+      </div>
+      
+      <div id="type-chart-flow-container" class="type-chart-container">
+        <!-- Populado via JS -->
+      </div>
+      
+      <div id="type-chart-table-container" class="type-chart-container" style="display: none;">
+        <!-- Populado via JS -->
+      </div>
+    </div>
+  </main>
+
+  <div id="nature-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Tabela de Naturezas</h2>        <button id="toggle-nature-view" class="view-btn">Alternar para Ordem Alfabética</button>
+        <span class="close-modal" id="close-modal">&times;</span>
+      </div>
+      <div id="nature-matrix-view">
+        <table class="matrix-table">
+          <thead id="matrix-head">
+            <!-- Populado via JS -->
+          </thead>
+          <tbody id="matrix-body">
+            <!-- Populado via JS -->
+          </tbody>
+        </table>
+      </div>
+      <div id="nature-list-view" style="display: none;">
+        <table class="nature-table">
+          <thead>
+            <tr>
+              <th>Natureza</th>
+              <th>Aumenta (+)</th>
+              <th>Diminui (-)</th>
+            </tr>
+          </thead>
+          <tbody id="nature-table-body">
+            <!-- Populado via JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Confirmação para Salvar Pesquisa -->
+  <div id="confirm-modal" class="modal">
+    <div class="modal-content" style="max-width: 450px; text-align: center;">
+      <h2 style="margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.5px; font-size: 1.4rem;">Salvar Pesquisa?</h2>
+      <p style="margin: 1.5rem 0; color: var(--text-secondary); font-weight: 600; font-size: 0.95rem;">Deseja salvar as configurações de IV/EV atuais deste Pokémon antes de iniciar uma nova pesquisa?</p>
+      <div style="display: flex; gap: 1rem; justify-content: center;">
+        <button id="btn-confirm-yes">Sim</button>
+        <button id="btn-confirm-no" class="theme-toggle">Não</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Confirmação para Clique na Linha Evolutiva -->
+  <div id="evo-confirm-modal" class="modal">
+    <div class="modal-content" style="max-width: 450px; text-align: center;">
+      <h2 style="margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.5px; font-size: 1.4rem;">Mudar de Pokémon?</h2>
+      <p style="margin: 1.5rem 0; color: var(--text-secondary); font-weight: 600; font-size: 0.95rem;">Deseja salvar as configurações do Pokémon atual antes de ir para o novo Pokémon?</p>
+      <div style="display: flex; gap: 1rem; justify-content: center;">
+        <button id="btn-evo-confirm-yes">Sim (Salvar)</button>
+        <button id="btn-evo-confirm-no" class="theme-toggle">Não (Descartar)</button>
+        <button id="btn-evo-confirm-cancel" style="background: #475569 !important;">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de Busca de Alvo de Treino de EV -->
+  <div id="ev-helper-modal" class="modal">
+    <div class="modal-content" style="max-width: 750px;">
+      <div class="modal-header">
+        <h2 id="label-ev-modal-title">Buscar Pokémon Alvo de Treino</h2>
+        <span class="close-modal" id="close-ev-modal">&times;</span>
+      </div>
+      
+      <div class="ev-modal-filters" style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.5rem;">
+        <!-- Nome/Dex -->
+        <div class="form-group">
+          <label id="label-ev-modal-search" style="font-weight: 800; font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase;">Buscar por Nome ou Número Dex</label>
+          <input type="text" id="ev-modal-search-input" placeholder="Ex: Pikachu ou 25..." autocomplete="off">
+        </div>
+        
+        <!-- Atributos checkbox grid -->
+        <div class="form-group">
+          <label id="label-ev-modal-stats" style="font-weight: 800; font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase;">Filtrar por Atributos Fornecidos</label>
+          <div class="filter-checkbox-group" id="ev-modal-stats-group" style="display: flex; flex-wrap: wrap; gap: 1rem; margin-top: 0.25rem;">
+            <label style="display: flex; align-items: center; gap: 0.25rem; font-weight: 600; cursor: pointer;"><input type="checkbox" value="hp"> HP</label>
+            <label style="display: flex; align-items: center; gap: 0.25rem; font-weight: 600; cursor: pointer;"><input type="checkbox" value="atk"> ATK</label>
+            <label style="display: flex; align-items: center; gap: 0.25rem; font-weight: 600; cursor: pointer;"><input type="checkbox" value="def"> DEF</label>
+            <label style="display: flex; align-items: center; gap: 0.25rem; font-weight: 600; cursor: pointer;"><input type="checkbox" value="spa"> SPA</label>
+            <label style="display: flex; align-items: center; gap: 0.25rem; font-weight: 600; cursor: pointer;"><input type="checkbox" value="spd"> SPD</label>
+            <label style="display: flex; align-items: center; gap: 0.25rem; font-weight: 600; cursor: pointer;"><input type="checkbox" value="spe"> SPE</label>
+          </div>
+        </div>
+
+        <!-- Quantidade checkbox grid -->
+        <div class="form-group">
+          <label id="label-ev-modal-yields" style="font-weight: 800; font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase;">Quantidade de EV Fornecida</label>
+          <div class="filter-checkbox-group" id="ev-modal-yields-group" style="display: flex; gap: 1.5rem; margin-top: 0.25rem;">
+            <label style="display: flex; align-items: center; gap: 0.25rem; font-weight: 600; cursor: pointer;"><input type="checkbox" value="1"> +1 EV</label>
+            <label style="display: flex; align-items: center; gap: 0.25rem; font-weight: 600; cursor: pointer;"><input type="checkbox" value="2"> +2 EVs</label>
+            <label style="display: flex; align-items: center; gap: 0.25rem; font-weight: 600; cursor: pointer;"><input type="checkbox" value="3"> +3 EVs</label>
+          </div>
+        </div>
+
+        <!-- Tipos checkbox grid -->
+        <div class="form-group">
+          <label id="label-ev-modal-types" style="font-weight: 800; font-size: 0.8rem; color: var(--text-secondary); text-transform: uppercase;">Filtrar por Tipo</label>
+          <div class="filter-types-grid" id="ev-modal-types-group">
+            <!-- Gerado via JS para manter as cores e traduções dos tipos -->
+          </div>
+        </div>
+      </div>
+      
+      <!-- Resultados -->
+      <div class="ev-modal-results-container" style="display: flex; flex-direction: column; gap: 0.5rem; border-top: 2px dashed var(--border-color); padding-top: 1.5rem;">
+        <div class="ev-modal-results-header" style="display: grid; grid-template-columns: 2fr 1fr 2fr 2fr; padding: 0.5rem 1rem; font-weight: 800; font-size: 0.75rem; color: var(--text-secondary); text-transform: uppercase; border-bottom: 2px solid var(--border-color);">
+          <span id="col-pokemon">Pokémon</span>
+          <span id="col-dex">Dex</span>
+          <span id="col-types">Tipos</span>
+          <span id="col-yield">EV Yield</span>
+        </div>
+        <div id="ev-modal-results-list" class="ev-modal-results-list" style="max-height: 250px; overflow-y: auto; display: flex; flex-direction: column; gap: 0.4rem; padding-right: 0.25rem; margin-top: 0.5rem;">
+          <!-- Resultados dinâmicos -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+</body>
+
+</html>

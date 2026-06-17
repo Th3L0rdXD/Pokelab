@@ -1,0 +1,21 @@
+- `[x]` Alterar a chave de tradução em português de "Restante" para "Restam" no arquivo `src/main.js`
+- `[x]` Atualizar o texto padrão estático do rótulo de EVs restantes de "Restante" para "Restam" no arquivo `index.html`
+- `[x]` Refatorar a div de agrupamento do Nível e Natureza para usar a classe `.calc-inputs-row` em `index.html`
+- `[x]` Estilizar `.calc-inputs-row` no arquivo `src/style.css` para posicionar os campos lado a lado no desktop e empilhados no mobile
+- `[x]` Manter o alinhamento de `#iv-quality` à direita no desktop
+- `[x]` Diminuir o tamanho e padding do badge "IVs Quality" para alinhar perfeitamente com a linha de Nível e Natureza
+- `[x]` Tornar as cores de fundo de "Ótimo" (Verde) e "Excelente" (Azul) mais vivas e vibrantes em `src/style.css`
+- `[x]` Melhorar a responsividade do badge "IVs Quality" para ocupar 100% de largura no mobile
+- `[x]` Ajustar e reduzir o tamanho das fontes dos totalizadores e contadores de EV (`0 / 510`, `Restam: 510`) de `1.2rem` para `0.95rem` no mobile
+- `[x]` Corrigir alinhamento de ramificações da linha evolutiva no mobile com Mega Evoluções através do empilhamento vertical do wrapper (`.evolution-step-wrapper`)
+- `[x]` Corrigir o alinhamento vertical dos caminhos bifurcados na linha evolutiva adicionando `align-items: start !important` no mobile
+- `[x]` Refatorar a alternância de abas de cabeçalho para permitir a visualização livre de "Tabela de Tipos" e "Registros Salvos" sem disparar a confirmação de navegação
+- `[x]` Atualizar a aba "Nova Pesquisa" para retornar diretamente à calculadora sem apagar dados se o usuário estiver retornando de outras abas com um Pokémon ativo
+- `[x]` Deduplicar as variantes de Zygarde no autocomplete de busca filtrando as formas de "Power Construct" e "Mega" redundantes
+- `[x]` Formatar os nomes de exibição das formas de Zygarde para "ZYGARDE 10%", "ZYGARDE 50%" e "ZYGARDE COMPLETE"
+- `[x]` Injetar uma linha evolutiva customizada para o Zygarde baseada em poder e porcentagem de células (10% -> 50% -> Complete)
+- `[x]` Adicionar modal HTML `#ability-modal` para exibir detalhes e traduções de habilidades
+- `[x]` Adicionar estilos interativos de hover e clique para as pílulas de habilidades (`.ability-pill`) em `src/style.css`
+- `[x]` Implementar `fetchAbilityDetails` e o motor de tradução assíncrono com cache local (`localStorage`) para obter descrições traduzidas em português, espanhol e inglês
+- `[x]` Configurar listeners de clique nos elementos e botões de fechamento para exibir o popup ao clicar em habilidades
+- `[x]` Validar a compilação do projeto com `npm run build`
