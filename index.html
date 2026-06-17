@@ -78,47 +78,37 @@
 
       <div class="calculator-form">
         <div class="calc-grid">
-          <div class="form-group">
-            <label for="level" id="label-level">Nível (1-100)</label>
-            <div class="level-container">
-              <input type="range" id="level-range" min="1" max="100" value="50">
-              <input type="number" id="level" min="1" max="100" value="50" style="width: 80px;">
+          <div class="calc-inputs-row">
+            <div class="form-group">
+              <label for="level" id="label-level">Nível (1-100)</label>
+              <div class="level-container">
+                <input type="range" id="level-range" min="1" max="100" value="50">
+                <input type="number" id="level" min="1" max="100" value="50" style="width: 80px;">
+              </div>
+            </div>
+            <div class="form-group">
+              <label id="label-nature">
+                <span id="text-nature-label">Natureza</span>
+                <span class="nature-tooltip-container">
+                  <button id="nature-help" class="help-btn" type="button">?</button>
+                  <span class="nature-tooltip" id="nature-tooltip-text"></span>
+                </span>
+              </label>
+              <div id="nature-select-trigger" class="nature-select-trigger">
+                <span id="selected-nature-name">Carregando...</span>
+                <span class="select-arrow">▼</span>
+              </div>
+              <select id="nature" style="display: none;">
+                <!-- Populado via JS -->
+              </select>
             </div>
           </div>
-          <div class="form-group">
-            <label id="label-nature">
-              <span id="text-nature-label">Natureza</span>
-              <span class="nature-tooltip-container">
-                <button id="nature-help" class="help-btn" type="button">?</button>
-                <span class="nature-tooltip" id="nature-tooltip-text"></span>
-              </span>
-            </label>
-            <div id="nature-select-trigger" class="nature-select-trigger">
-              <span id="selected-nature-name">Carregando...</span>
-              <span class="select-arrow">▼</span>
-            </div>
-            <select id="nature" style="display: none;">
-              <!-- Populado via JS -->
-            </select>
+          
+          <div style="display: flex; align-items: center; justify-content: flex-end;">
+            <div id="iv-quality" class="quality-badge">---</div>
           </div>
         </div>
 
-        <!-- Rastreamento de EVs -->
-        <div class="ev-tracker-row">
-          <div class="ev-tracker">
-            <div class="ev-tracker-text" style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-              <div style="display: flex; gap: 1.5rem; align-items: center;">
-                <span><span id="label-evs-used">EVs Utilizados</span>: <strong id="ev-used">0</strong> / 510</span>
-                <span><span class="tooltip-container" style="display: inline-flex; align-items: center; gap: 0.25rem;"><span id="label-remaining">Restante</span>: <strong id="ev-remaining">510</strong><button class="help-btn" type="button">?</button><span class="tooltip-text" id="evs-used-tooltip-text"></span></span></span>
-              </div>
-            </div>
-            <div class="ev-tracker-bar-container">
-              <div id="ev-tracker-bar" class="ev-tracker-bar"></div>
-            </div>
-          </div>
-          <div id="iv-quality" class="quality-badge">---</div>
-        </div>
- 
         <div class="stats-table-wrapper">
           <table class="stats-table">
             <thead>
@@ -138,9 +128,25 @@
             <tfoot>
               <tr class="total-row">
                 <td><strong id="td-subtotal">SUB-TOTAL</strong></td>
-                <td id="base-total-sum">0</td>
-                <td colspan="4" style="text-align: right;"><strong id="td-somatotal">SOMA TOTAL</strong></td>
-                <td id="stat-total-sum">0</td>
+                <td id="base-total-sum" class="base-total-sum-val">0</td>
+                <td></td>
+                <td style="text-align: center; vertical-align: middle;">
+                  <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 0.2rem; font-size: 0.82rem; white-space: nowrap;">
+                    <div style="position: relative; display: inline-flex; align-items: center; justify-content: center;">
+                      <strong id="ev-used" class="ev-used-val" style="color: var(--secondary-color);">0</strong><span class="ev-total-boundary"> / 510</span>
+                      <span class="tooltip-container" style="position: absolute; left: 100%; margin-left: 0.25rem;">
+                        <button class="help-btn" type="button">?</button>
+                        <span class="tooltip-text" id="evs-used-tooltip-text"></span>
+                      </span>
+                    </div>
+                    <div style="font-weight: bold; text-transform: uppercase; letter-spacing: 0.5px; font-size: 0.72rem;">
+                      <span id="label-remaining">Restam</span>: <strong id="ev-remaining" class="ev-remaining-val" style="color: #ef4444;">510</strong>
+                    </div>
+                  </div>
+                </td>
+                <td class="stat-min"></td>
+                <td class="stat-max"></td>
+                <td id="stat-total-sum" class="stat-total-sum-val">0</td>
               </tr>
             </tfoot>
           </table>

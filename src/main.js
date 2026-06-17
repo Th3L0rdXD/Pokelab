@@ -25,7 +25,7 @@ const translations = {
     level: "Nível (1-100)",
     nature: "Natureza",
     evsUsed: "EVs Utilizados",
-    remaining: "Restante",
+    remaining: "Restam",
     stat: "Status",
     base: "Base",
     iv: "IV (0-31)",
@@ -690,11 +690,6 @@ const applyLanguage = () => {
   const lblTrainingTargets = document.getElementById('label-training-targets');
   if (lblTrainingTargets) lblTrainingTargets.textContent = t.trainingTargetsLabel;
 
-  const lblEvsUsed = document.getElementById('label-evs-used');
-  if (lblEvsUsed) {
-    const txt = lblEvsUsed.querySelector('.title-text') || lblEvsUsed;
-    txt.textContent = t.evsUsed;
-  }
   const evsUsedTooltip = document.getElementById('evs-used-tooltip-text');
   if (evsUsedTooltip) evsUsedTooltip.textContent = t.evsUsedTooltip;
 
@@ -756,8 +751,6 @@ const applyLanguage = () => {
   // Rodapé da tabela
   const tdSubtotal = document.getElementById('td-subtotal');
   if (tdSubtotal) tdSubtotal.textContent = t.subtotal;
-  const tdSomatotal = document.getElementById('td-somatotal');
-  if (tdSomatotal) tdSomatotal.textContent = t.somaTotal;
 
   // Efetividade
   const lblEffectivenessTitle = document.getElementById('label-effectiveness-title');
@@ -967,16 +960,7 @@ const init = async () => {
 
   initLangDropdown();
 
-  window.addEventListener('resize', () => {
-    const somaTotalTd = document.getElementById('td-somatotal')?.parentElement;
-    if (somaTotalTd) {
-      if (window.innerWidth <= 768) {
-        somaTotalTd.setAttribute('colspan', '2');
-      } else {
-        somaTotalTd.setAttribute('colspan', '4');
-      }
-    }
-  });
+  // Dynamic colspan alterations removed as they are handled responsively in CSS.
 
   let lastScrollY = window.scrollY;
   window.addEventListener('scroll', () => {
@@ -1673,16 +1657,7 @@ const renderStatsTable = () => {
 
 
   const bst = currentPokemon.stats.reduce((acc, s) => acc + s.base_stat, 0);
-  elements.baseTotalSum.textContent = bst;
-
-  const somaTotalTd = document.getElementById('td-somatotal')?.parentElement;
-  if (somaTotalTd) {
-    if (window.innerWidth <= 768) {
-      somaTotalTd.setAttribute('colspan', '2');
-    } else {
-      somaTotalTd.setAttribute('colspan', '4');
-    }
-  }
+  if (elements.baseTotalSum) elements.baseTotalSum.textContent = bst;
 
   document.querySelectorAll('.iv-input, .ev-input').forEach(input => {
     input.addEventListener('input', (e) => {
@@ -1781,20 +1756,14 @@ const updateStats = () => {
   // Calculate Total Sum
   const totalSum = Array.from(document.querySelectorAll('[id^="total-"]'))
     .reduce((sum, el) => sum + (parseInt(el.textContent) || 0), 0);
-  elements.statTotalSum.textContent = totalSum;
+  if (elements.statTotalSum) elements.statTotalSum.textContent = totalSum;
 
   // Atualizar o EV Tracker
   const remainingEvs = 510 - totalEvs;
   const evUsedEl = document.getElementById('ev-used');
   const evRemainingEl = document.getElementById('ev-remaining');
-  const evTrackerBar = document.getElementById('ev-tracker-bar');
-
   if (evUsedEl) evUsedEl.textContent = totalEvs;
   if (evRemainingEl) evRemainingEl.textContent = remainingEvs;
-  if (evTrackerBar) {
-    const evBarPercentage = (totalEvs / 510) * 100;
-    evTrackerBar.style.width = `${evBarPercentage}%`;
-  }
 
   // IV Quality
   const ivPercent = Math.min((totalIvs / 186) * 100, 100);

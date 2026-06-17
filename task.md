@@ -1,0 +1,9 @@
+- `[x]` Alterar a chave de tradução em português de "Restante" para "Restam" no arquivo `src/main.js`
+- `[x]` Atualizar o texto padrão estático do rótulo de EVs restantes de "Restante" para "Restam" no arquivo `index.html`
+- `[x]` Refatorar a div de agrupamento do Nível e Natureza para usar a classe `.calc-inputs-row` em `index.html`
+- `[x]` Estilizar `.calc-inputs-row` no arquivo `src/style.css` para posicionar os campos lado a lado no desktop e empilhados no mobile
+- `[x]` Manter o alinhamento de `#iv-quality` à direita no desktop
+- `[x]` Diminuir o tamanho e padding do badge "IVs Quality" para alinhar perfeitamente com a linha de Nível e Natureza
+- `[x]` Tornar as cores de fundo de "Ótimo" (Verde) e "Excelente" (Azul) mais vivas e vibrantes em `src/style.css`
+- `[x]` Melhorar a responsividade do badge "IVs Quality" para ocupar 100% de largura no mobile
+- `[x]` Validar a compilação do projeto com `npm run build`
