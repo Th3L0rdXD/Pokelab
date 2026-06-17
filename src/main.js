@@ -1,7 +1,7 @@
 import './style.css';
 import { initTheme } from './theme';
 import { initSearch, formatPokemonDisplayName } from './search';
-import { fetchPokemonDetails, fetchTypeEffectiveness, fetchNatures, fetchEvolutionChain } from './api';
+import { fetchPokemonDetails, fetchTypeEffectiveness, fetchNatures, fetchEvolutionChain, fetchAbilityDetails } from './api';
 import { calculateStat, mapStatName, reverseMapStatName } from './calculator';
 import { saveData, loadData, clearData } from './storage';
 import { pokemonEvData } from './pokemon_ev_data';
@@ -1022,6 +1022,27 @@ const init = async () => {
     });
   }
 
+  const abilitiesEl = document.getElementById('poke-abilities');
+  if (abilitiesEl) {
+    abilitiesEl.addEventListener('click', (e) => {
+      const pill = e.target.closest('.ability-pill');
+      if (!pill) return;
+
+      e.stopPropagation(); // Prevents immediately closing it on window click
+      
+      const tooltip = pill.querySelector('.tooltip-text');
+      if (!tooltip) return;
+
+      // Close all other active tooltips
+      document.querySelectorAll('.tooltip-text.active').forEach(t => {
+        if (t !== tooltip) t.classList.remove('active');
+      });
+
+      // Toggle active class on current tooltip
+      tooltip.classList.toggle('active');
+    });
+  }
+
   const trigger = document.getElementById('nature-select-trigger');
   if (trigger) {
     trigger.addEventListener('click', () => {
@@ -1068,6 +1089,11 @@ const init = async () => {
     if (e.target === evHelperModal) {
       evHelperModal.style.display = 'none';
     }
+    
+    // Close any active tooltips when clicking outside
+    document.querySelectorAll('.tooltip-text.active').forEach(t => {
+      t.classList.remove('active');
+    });
   });
 
 
@@ -1615,12 +1641,20 @@ const renderPokemonInfo = () => {
   const abilitiesEl = document.getElementById('poke-abilities');
   if (abilitiesEl && currentPokemon.abilities) {
     const hiddenText = translations[currentLang].hiddenAbilityText || '(Hidden)';
-    abilitiesEl.innerHTML = currentPokemon.abilities.map(a => {
+    abilitiesEl.innerHTML = currentPokemon.abilities.map((a, index) => {
       const name = a.ability.name.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
       const hiddenClass = a.is_hidden ? 'hidden-ability' : '';
       const hiddenSuffix = a.is_hidden ? ` <span style="font-size: 0.65rem; opacity: 0.85;">${hiddenText}</span>` : '';
-      return `<span class="ability-pill ${hiddenClass}">${name}${hiddenSuffix}</span>`;
+      return `<span class="ability-pill tooltip-container ${hiddenClass}">
+        ${name}${hiddenSuffix}
+        <span class="tooltip-text" id="ability-tooltip-${index}">Carregando...</span>
+      </span>`;
     }).join('');
+
+    // Trigger asynchronous loading and translation of the tooltips
+    currentPokemon.abilities.forEach((a, index) => {
+      loadAbilityTooltip(a, index);
+    });
   }
 
   // Rendimento
@@ -2024,6 +2058,11 @@ const getResolvedBranchesForChild = (childNode, parentFormName) => {
 const getSingleEvolutionMethodHtml = (details) => {
   if (!details) return '<span class="method-text">Lvl ?</span>';
   const lang = currentLang;
+  
+  if (details.custom_method_text) {
+    const customText = details.custom_method_text[lang] || details.custom_method_text['en'] || '';
+    return `<span class="method-text">${customText}</span>`;
+  }
   const t = translations[lang];
 
   let text = '';
@@ -2275,6 +2314,14 @@ const megaEvolutionsMap = {
 const getFormDisplayNameAndSubtitle = (formName) => {
   let name = formName;
   let subtitle = '';
+
+  if (formName === 'zygarde-10') {
+    return { name: 'Zygarde 10%', subtitle: '' };
+  } else if (formName === 'zygarde-50') {
+    return { name: 'Zygarde 50%', subtitle: '' };
+  } else if (formName === 'zygarde-complete') {
+    return { name: 'Zygarde Complete', subtitle: '' };
+  }
 
   if (formName.includes('-mega') || formName.includes('-gmax')) {
     name = formatPokemonDisplayName(formName);
@@ -2596,7 +2643,61 @@ const renderFormEvolutionNode = (formName, parentFormName, chainData) => {
 
 const renderEvolutionChain = async () => {
   try {
-    const chainData = await fetchEvolutionChain(currentPokemon.species.name);
+    let chainData;
+    if (currentPokemon && currentPokemon.species && currentPokemon.species.name === 'zygarde') {
+      chainData = {
+        id: 370,
+        chain: {
+          evolution_details: [],
+          is_baby: false,
+          species: {
+            name: 'zygarde-10',
+            url: 'https://pokeapi.co/api/v2/pokemon-species/10181/'
+          },
+          evolves_to: [
+            {
+              evolution_details: [
+                {
+                  trigger: { name: 'level-up' },
+                  custom_method_text: {
+                    pt: 'Reunir Células (50%)',
+                    en: 'Gather Cells (50%)',
+                    es: 'Reunir Células (50%)'
+                  }
+                }
+              ],
+              is_baby: false,
+              species: {
+                name: 'zygarde-50',
+                url: 'https://pokeapi.co/api/v2/pokemon-species/718/'
+              },
+              evolves_to: [
+                {
+                  evolution_details: [
+                    {
+                      trigger: { name: 'level-up' },
+                      custom_method_text: {
+                        pt: 'Power Construct (HP < 50%)',
+                        en: 'Power Construct (HP < 50%)',
+                        es: 'Power Construct (HP < 50%)'
+                      }
+                    }
+                  ],
+                  is_baby: false,
+                  species: {
+                    name: 'zygarde-complete',
+                    url: 'https://pokeapi.co/api/v2/pokemon-species/10120/'
+                  },
+                  evolves_to: []
+                }
+              ]
+            }
+          ]
+        }
+      };
+    } else {
+      chainData = await fetchEvolutionChain(currentPokemon.species.name);
+    }
     elements.evolutionChain.innerHTML = '';
 
     const allFormNames = collectAllFormNames(chainData);
@@ -3124,5 +3225,87 @@ function removeEvTarget(index) {
   renderEvTrainingList();
   updateStats();
 }
+
+const getTranslation = async (text, fromLang, toLang) => {
+  const cacheKey = `trans_${fromLang}_${toLang}_${text}`;
+  const cached = localStorage.getItem(cacheKey);
+  if (cached) return cached;
+  
+  try {
+    const res = await fetch(`https://api.mymemory.translated.net/get?q=${encodeURIComponent(text)}&langpair=${fromLang}|${toLang}`);
+    const data = await res.json();
+    const translation = data.responseData.translatedText;
+    if (translation) {
+      localStorage.setItem(cacheKey, translation);
+      return translation;
+    }
+  } catch (err) {
+    console.error("Translation API failed:", err);
+  }
+  return text; // fallback
+};
+
+const loadAbilityTooltip = async (abilityInfo, index) => {
+  const tooltipEl = document.getElementById(`ability-tooltip-${index}`);
+  if (!tooltipEl) return;
+
+  const lang = currentLang;
+  const loadingText = lang === 'pt' ? 'Carregando...' : lang === 'es' ? 'Cargando...' : 'Loading...';
+  tooltipEl.textContent = loadingText;
+
+  try {
+    const details = await fetchAbilityDetails(abilityInfo.ability.name);
+
+    // Get English description
+    let englishDesc = '';
+    const enEffectObj = details.effect_entries.find(e => e.language.name === 'en');
+    if (enEffectObj) {
+      englishDesc = enEffectObj.short_effect || enEffectObj.effect;
+    } else {
+      const enFlavorObj = details.flavor_text_entries.find(f => f.language.name === 'en');
+      if (enFlavorObj) {
+        englishDesc = enFlavorObj.flavor_text;
+      }
+    }
+
+    let finalDesc = '';
+
+    if (lang === 'en') {
+      finalDesc = englishDesc;
+    } else if (lang === 'es') {
+      const esEffectObj = details.effect_entries.find(e => e.language.name === 'es');
+      if (esEffectObj) {
+        finalDesc = esEffectObj.short_effect || esEffectObj.effect;
+      } else {
+        const esFlavorObj = details.flavor_text_entries.find(f => f.language.name === 'es');
+        if (esFlavorObj) {
+          finalDesc = esFlavorObj.flavor_text;
+        } else {
+          finalDesc = await getTranslation(englishDesc, 'en', 'es');
+        }
+      }
+    } else if (lang === 'pt') {
+      finalDesc = await getTranslation(englishDesc, 'en', 'pt');
+    } else {
+      finalDesc = englishDesc;
+    }
+
+    if (finalDesc) {
+      finalDesc = finalDesc.replace(/[\n\f\r]+/g, ' ');
+    }
+
+    // Verify if the element is still in the document
+    const currentEl = document.getElementById(`ability-tooltip-${index}`);
+    if (currentEl) {
+      currentEl.textContent = finalDesc || (lang === 'pt' ? 'Sem descrição.' : lang === 'es' ? 'Sin descripción.' : 'No description.');
+    }
+  } catch (err) {
+    console.error("Error loading ability details:", err);
+    const currentEl = document.getElementById(`ability-tooltip-${index}`);
+    if (currentEl) {
+      currentEl.textContent = lang === 'pt' ? 'Falha ao carregar.' : lang === 'es' ? 'Fallo al cargar.' : 'Failed to load.';
+    }
+  }
+};
 
 init();

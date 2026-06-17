@@ -1956,12 +1956,32 @@ input[type="range"]::-moz-range-thumb:hover {
   display: inline-flex;
   align-items: center;
   gap: 4px;
+  cursor: pointer;
+  transition: transform 0.2s, background-color 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.ability-pill:hover {
+  transform: translateY(-1px);
+  border-color: var(--secondary-color);
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+}
+
+.ability-pill:active {
+  transform: translateY(1px);
 }
 
 .ability-pill.hidden-ability {
   border-color: rgba(var(--secondary-rgb), 0.4);
   color: var(--secondary-color);
   background: rgba(var(--secondary-rgb), 0.05);
+}
+
+.ability-pill.hidden-ability:hover {
+  border-color: var(--secondary-color);
+  background: rgba(var(--secondary-rgb), 0.15);
+  color: var(--secondary-hover);
 }
 
 /* Extra Panels (Notes & EV Training Helper) */
@@ -2936,4 +2956,11 @@ header.header-hidden {
   .evolution-path-row .evolution-arrow {
     transform: rotate(90deg) !important;
   }
+}
+
+/* Active class to keep tooltips visible on click */
+.tooltip-text.active {
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
 }

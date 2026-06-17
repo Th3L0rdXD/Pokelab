@@ -4,15 +4,22 @@ export const fetchAllPokemonNames = async () => {
     // Fetching up to 1500 to cover all species and alternative varieties/forms
     const response = await fetch(`${BASE_URL}/pokemon?limit=1500`);
     const data = await response.json();
-    return data.results.map((p) => {
-        const parts = p.url.split('/');
-        const id = parseInt(parts[parts.length - 2]);
-        return {
-            name: p.name,
-            id: id,
-            url: p.url
-        };
-    });
+    const excludedForms = [
+        'zygarde-10-power-construct',
+        'zygarde-50-power-construct',
+        'zygarde-mega'
+    ];
+    return data.results
+        .filter(p => !excludedForms.includes(p.name.toLowerCase()))
+        .map((p) => {
+            const parts = p.url.split('/');
+            const id = parseInt(parts[parts.length - 2]);
+            return {
+                name: p.name,
+                id: id,
+                url: p.url
+            };
+        });
 };
 
 export const fetchPokemonDetails = async (idOrName) => {
@@ -86,4 +93,9 @@ export const fetchEvolutionChain = async (pokemonId) => {
     const evoData = await evoRes.json();
 
     return evoData;
+};
+
+export const fetchAbilityDetails = async (abilityName) => {
+    const response = await fetch(`${BASE_URL}/ability/${abilityName}`);
+    return await response.json();
 };

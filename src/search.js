@@ -4,6 +4,16 @@ export const formatPokemonDisplayName = (name) => {
     if (!name) return '';
     const nameLower = name.toLowerCase();
     
+    if (nameLower === 'zygarde-50') {
+        return 'ZYGARDE 50%';
+    }
+    if (nameLower === 'zygarde-10') {
+        return 'ZYGARDE 10%';
+    }
+    if (nameLower === 'zygarde-complete') {
+        return 'ZYGARDE COMPLETE';
+    }
+    
     if (nameLower.includes('-mega') || nameLower.includes('-gmax')) {
         const isMega = nameLower.includes('-mega');
         const prefix = isMega ? 'MEGA' : 'GMAX';
