@@ -47,9 +47,13 @@ export const initSearch = async (onSelect) => {
     const filterPokemon = (query) => {
         if (!query) return [];
         const normalizedQuery = query.toLowerCase().replace(/[-\s]+/g, ' ');
+        const queryInt = parseInt(query);
         return allPokemon.filter(p => {
             const normalizedName = p.name.toLowerCase().replace(/[-\s]+/g, ' ');
-            return normalizedName.includes(normalizedQuery) || p.id.toString() === query;
+            const matchName = normalizedName.includes(normalizedQuery);
+            const matchId = p.id.toString() === query || 
+                            (!isNaN(queryInt) && (p.id === queryInt || p.dexId === queryInt));
+            return matchName || matchId;
         }).slice(0, 10);
     };
 
@@ -63,7 +67,8 @@ export const initSearch = async (onSelect) => {
         results.forEach(p => {
             const div = document.createElement('div');
             div.className = 'search-item';
-            div.innerHTML = `<span>#${p.id.toString().padStart(3, '0')}</span> <strong>${formatPokemonDisplayName(p.name)}</strong>`;
+            const displayedId = p.dexId || p.id;
+            div.innerHTML = `<span>#${displayedId.toString().padStart(3, '0')}</span> <strong>${formatPokemonDisplayName(p.name)}</strong>`;
             div.onclick = () => {
                 searchInput.value = formatPokemonDisplayName(p.name);
                 resultsDiv.style.display = 'none';

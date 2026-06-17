@@ -9,17 +9,35 @@ export const fetchAllPokemonNames = async () => {
         'zygarde-50-power-construct',
         'zygarde-mega'
     ];
-    return data.results
+    const baseNameToId = {};
+    const list = data.results
         .filter(p => !excludedForms.includes(p.name.toLowerCase()))
         .map((p) => {
             const parts = p.url.split('/');
             const id = parseInt(parts[parts.length - 2]);
+            if (id < 10000) {
+                baseNameToId[p.name.toLowerCase()] = id;
+            }
             return {
                 name: p.name,
                 id: id,
                 url: p.url
             };
         });
+
+    return list.map(p => {
+        let dexId = p.id;
+        if (p.name.toLowerCase().includes('-mega')) {
+            const baseName = p.name.toLowerCase().split('-mega')[0];
+            if (baseNameToId[baseName]) {
+                dexId = baseNameToId[baseName];
+            }
+        }
+        return {
+            ...p,
+            dexId: dexId
+        };
+    });
 };
 
 export const fetchPokemonDetails = async (idOrName) => {

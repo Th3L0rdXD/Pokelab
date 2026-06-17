@@ -1631,7 +1631,14 @@ const handlePokemonSelect = async (id, isFromHistory = false) => {
 
 const renderPokemonInfo = () => {
   elements.pokeImg.src = currentPokemon.sprites.other['official-artwork'].front_default || currentPokemon.sprites.front_default;
-  elements.pokeNameId.innerHTML = `<span class="poke-id">#${currentPokemon.id.toString().padStart(3, '0')}</span><span class="poke-name">${formatPokemonDisplayName(currentPokemon.name)}</span>`;
+  
+  let displayedId = currentPokemon.id;
+  if (currentPokemon.species && currentPokemon.species.url) {
+    const parts = currentPokemon.species.url.split('/');
+    displayedId = parseInt(parts[parts.length - 2]) || currentPokemon.id;
+  }
+  
+  elements.pokeNameId.innerHTML = `<span class="poke-id">#${displayedId.toString().padStart(3, '0')}</span><span class="poke-name">${formatPokemonDisplayName(currentPokemon.name)}</span>`;
 
   elements.pokeTypes.innerHTML = currentPokemon.types.map(t =>
     `<span class="type-pill" style="background-color: var(--type-${t.type.name})">${t.type.name}</span>`
@@ -2428,7 +2435,12 @@ const renderFormEvolutionNode = (formName, parentFormName, chainData) => {
   
   const spriteUrl = cache ? cache.sprite : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${getSpeciesNameFromForm(formName)}.png`;
   const typesHtml = cache ? cache.types.map(t => `<span class="type-pill" style="background-color: var(--type-${t})">${getTypeTranslated(t)}</span>`).join('') : '';
-  const idHtml = cache ? `<span class="evolution-id">#${cache.id.toString().padStart(3, '0')}</span>` : '';
+  let displayedId = cache ? cache.id : 0;
+  if (cache && cache.speciesUrl) {
+    const parts = cache.speciesUrl.split('/');
+    displayedId = parseInt(parts[parts.length - 2]) || cache.id;
+  }
+  const idHtml = cache ? `<span class="evolution-id">#${displayedId.toString().padStart(3, '0')}</span>` : '';
   const cleanInfo = getFormDisplayNameAndSubtitle(formName);
   const capitalizedName = cleanInfo.name.toUpperCase();
   const subtitleHtml = cleanInfo.subtitle ? `<span class="evolution-subtitle" style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.2rem;">${cleanInfo.subtitle}</span>` : '';
@@ -2438,7 +2450,13 @@ const renderFormEvolutionNode = (formName, parentFormName, chainData) => {
     const ninjaskCache = evolutionDetailsCache['ninjask'];
     const ninjaskSprite = ninjaskCache ? ninjaskCache.sprite : '';
     const ninjaskTypes = ninjaskCache ? ninjaskCache.types.map(t => `<span class="type-pill" style="background-color: var(--type-${t})">${getTypeTranslated(t)}</span>`).join('') : '';
-    const ninjaskIdHtml = ninjaskCache ? `<span class="evolution-id">#${ninjaskCache.id.toString().padStart(3, '0')}</span>` : '';
+    
+    let displayedNinjaskId = ninjaskCache ? ninjaskCache.id : 0;
+    if (ninjaskCache && ninjaskCache.speciesUrl) {
+      const parts = ninjaskCache.speciesUrl.split('/');
+      displayedNinjaskId = parseInt(parts[parts.length - 2]) || ninjaskCache.id;
+    }
+    const ninjaskIdHtml = ninjaskCache ? `<span class="evolution-id">#${displayedNinjaskId.toString().padStart(3, '0')}</span>` : '';
     
     stepHtml = `
       <div style="display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; justify-content: center;">
@@ -2579,7 +2597,12 @@ const renderFormEvolutionNode = (formName, parentFormName, chainData) => {
       const cache = evolutionDetailsCache[megaFormName];
       const megaSprite = cache ? cache.sprite : `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${megaFormName}.png`;
       const megaTypes = cache ? cache.types.map(t => `<span class="type-pill" style="background-color: var(--type-${t})">${getTypeTranslated(t)}</span>`).join('') : '';
-      const megaIdHtml = cache ? `<span class="evolution-id">#${cache.id.toString().padStart(3, '0')}</span>` : '';
+      let displayedMegaId = cache ? cache.id : 0;
+      if (cache && cache.speciesUrl) {
+        const parts = cache.speciesUrl.split('/');
+        displayedMegaId = parseInt(parts[parts.length - 2]) || cache.id;
+      }
+      const megaIdHtml = cache ? `<span class="evolution-id">#${displayedMegaId.toString().padStart(3, '0')}</span>` : '';
       const { name: cleanName, subtitle } = getFormDisplayNameAndSubtitle(megaFormName);
       const capitalizedName = cleanName.toUpperCase();
       const subtitleHtml = subtitle ? `<span class="evolution-subtitle" style="font-size: 0.65rem; color: var(--text-secondary); margin-bottom: 0.1rem;">${subtitle}</span>` : '';
@@ -2726,7 +2749,8 @@ const renderEvolutionChain = async () => {
           id: item.details.id,
           name: item.details.name,
           types: item.details.types.map(t => t.type.name),
-          sprite: item.details.sprites.other['official-artwork'].front_default || item.details.sprites.front_default
+          sprite: item.details.sprites.other['official-artwork'].front_default || item.details.sprites.front_default,
+          speciesUrl: item.details.species ? item.details.species.url : null
         };
       }
     });

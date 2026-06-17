@@ -2977,10 +2977,10 @@ header.header-hidden {
   opacity: 1 !important;
 }
 
-/* Mobile responsive layout overrides to prevent ability tooltip clipping */
 @media (max-width: 768px) {
   .abilities-list {
     position: relative;
+    width: 100% !important;
   }
   
   .abilities-list .ability-pill.tooltip-container {
